@@ -1,9 +1,25 @@
-So if you want to use this, you need an executer. So maker sure to get one, without getting a virus.
-I recommend just downloading Exloader, because they have Solora and Xeno for roblox, but also a bunch of other hacks for a lot of games
+# Expotality Roblox Hack (Keyless Suite)
 
-Anyway, once you have the executer (Xeno, Solora, Tidal, Volt, etc.) you just have to make sure you executer is linked (usually a green dot)
-and then paste this code into the empty space:
+A versatile, keyless script suite designed for various Roblox games with plenty of customization options.
 
-loadstring(game:HttpGet("https://raw.githubusercontent.com/Expotality/Expotality-Roblox-Hack-Keyless/main/loader.lua"))()
+## Prerequisites
 
-then click execute, and boom you're done. Lot's of options.  DM me @Expotality on discord if you want to suggest an addition to my suite.
+To use this script, you will need a Roblox script executor. **ALL executors are compatible.**
+
+If you are looking for an executor, I recommend downloading **Exloader** because they safely host trusted tools like Solora and Xeno, as well as hacks for other games. 
+
+## How to Use
+
+1. Launch your executor and make sure it is successfully linked/injected into your Roblox game (usually shown by a green dot status).
+2. Paste the following loadstring code into your executor's script area:
+
+```lua
+loadstring(game:HttpGet("[https://raw.githubusercontent.com/Expotality/Expotality-Roblox-Hack-Keyless/main/loader.lua](https://raw.githubusercontent.com/Expotality/Expotality-Roblox-Hack-Keyless/main/loader.lua)"))()
+```
+
+3. Click **Execute** and you are good to go! There are plenty of options built in.
+
+## Contact & Suggestions
+
+Want to suggest a new addition, feature, or game support to the suite? 
+* Send a DM on Discord: `@Expotality`
