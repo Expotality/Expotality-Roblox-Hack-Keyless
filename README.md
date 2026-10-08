@@ -1,6 +1,8 @@
 # Expotality Roblox Hack (Keyless Suite)
 
-A versatile, keyless script suite designed for various Roblox games with plenty of customization options.
+A versatile, keyless script suite engineered for universal compatibility—designed to work seamlessly across nearly every Roblox game. Use the exact same script anywhere, anytime, completely hassle-free.
+
+This script was also built lighter than others, so crashes are extremely rare! Even on low-end devices.
 
 ## Prerequisites
 
