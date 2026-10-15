@@ -1130,6 +1130,162 @@ UserInputService.InputBegan:Connect(function(
     end
 end)
 
+
+
+local function createSlider(parent, module, settingName, title, minValue, maxValue, step)
+    minValue = tonumber(minValue) or 0
+    maxValue = tonumber(maxValue) or 100
+    step = tonumber(step) or 1
+
+    if maxValue <= minValue then
+        warn("[Menu] Invalid slider range:", settingName)
+        return
+    end
+
+    step = math.max(step, 0.000001)
+
+    local row = create("Frame", {
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, 0, 0, 48),
+        ZIndex = 11,
+        Parent = parent,
+    })
+
+    local label = create("TextLabel", {
+        BackgroundTransparency = 1,
+        Text = title,
+        TextColor3 = TextColor,
+        TextSize = 12,
+        Font = Enum.Font.Gotham,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Size = UDim2.new(0.7, 0, 0, 20),
+        ZIndex = 12,
+        Parent = row,
+    })
+
+    local valueLabel = create("TextLabel", {
+        BackgroundTransparency = 1,
+        Text = "",
+        TextColor3 = Accent,
+        TextSize = 12,
+        Font = Enum.Font.GothamBold,
+        TextXAlignment = Enum.TextXAlignment.Right,
+        Position = UDim2.new(0.7, 0, 0, 0),
+        Size = UDim2.new(0.3, 0, 0, 20),
+        ZIndex = 12,
+        Parent = row,
+    })
+
+    local track = create("TextButton", {
+        BackgroundColor3 = ElementBackground,
+        BorderSizePixel = 0,
+        Text = "",
+        AutoButtonColor = false,
+        Position = UDim2.fromOffset(0, 28),
+        Size = UDim2.new(1, 0, 0, 8),
+        Active = true,
+        ZIndex = 12,
+        Parent = row,
+    })
+
+    corner(track, 4)
+
+    local fill = create("Frame", {
+        BackgroundColor3 = Accent,
+        BorderSizePixel = 0,
+        Size = UDim2.new(0, 0, 1, 0),
+        ZIndex = 13,
+        Parent = track,
+    })
+
+    corner(fill, 4)
+
+    local knob = create("Frame", {
+        BackgroundColor3 = Color3.new(1, 1, 1),
+        BorderSizePixel = 0,
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        Position = UDim2.new(0, 0, 0.5, 0),
+        Size = UDim2.fromOffset(12, 12),
+        ZIndex = 14,
+        Parent = track,
+    })
+
+    corner(knob, 6)
+
+    local current = tonumber(getSetting(module, settingName))
+        or tonumber(module.Settings[settingName].Default)
+        or minValue
+
+    local function setValue(value)
+        value = math.clamp(value, minValue, maxValue)
+        value = minValue + math.floor((value - minValue) / step + 0.5) * step
+        value = math.clamp(value, minValue, maxValue)
+
+        local decimals = 0
+        local formattedStep = tostring(step)
+
+        if formattedStep:find("%.") then
+            decimals = #formattedStep:match("%.(%d+)") 
+        end
+
+        current = value
+
+        local alpha = (value - minValue) / (maxValue - minValue)
+
+        fill.Size = UDim2.new(alpha, 0, 1, 0)
+        knob.Position = UDim2.new(alpha, 0, 0.5, 0)
+        valueLabel.Text = string.format("%." .. math.min(decimals, 6) .. "f", value)
+
+        setSetting(module, settingName, value)
+    end
+
+    local dragging = false
+
+    local function updateFromInput(input)
+        local width = track.AbsoluteSize.X
+        if width <= 0 then
+            return
+        end
+
+        local alpha = math.clamp(
+            (input.Position.X - track.AbsolutePosition.X) / width,
+            0,
+            1
+        )
+
+        setValue(minValue + alpha * (maxValue - minValue))
+    end
+
+    track.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+            or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            updateFromInput(input)
+        end
+    end)
+
+    game:GetService("UserInputService").InputChanged:Connect(function(input)
+        if dragging and (
+            input.UserInputType == Enum.UserInputType.MouseMovement
+            or input.UserInputType == Enum.UserInputType.Touch
+        ) then
+            updateFromInput(input)
+        end
+    end)
+
+    game:GetService("UserInputService").InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+            or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = false
+        end
+    end)
+
+    setValue(current)
+
+    return row
+end
+
+
 ------------------------------------------------------------
 -- MODULE CARD
 ------------------------------------------------------------
