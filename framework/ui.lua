@@ -372,8 +372,8 @@ end
 -- TOGGLE
 ------------------------------------------------------------
 
-local function createToggle(parent, module, settingName, title)
 
+local function createToggle(parent, module, settingName, title)
     local row = create("Frame", {
         BackgroundColor3 = ElementBackground,
         BorderSizePixel = 0,
@@ -398,7 +398,7 @@ local function createToggle(parent, module, settingName, title)
     })
 
     local button = create("TextButton", {
-        BackgroundColor3 = Color3.fromRGB(45, 46, 54),
+        BackgroundColor3 = ElementBackground,
         BorderSizePixel = 0,
         Text = "",
         AutoButtonColor = false,
@@ -412,7 +412,7 @@ local function createToggle(parent, module, settingName, title)
     corner(button, 12)
 
     local knob = create("Frame", {
-        BackgroundColor3 = Color3.fromRGB(180, 182, 190),
+        BackgroundColor3 = SubTextColor,
         BorderSizePixel = 0,
         Size = UDim2.fromOffset(16, 16),
         Position = UDim2.fromOffset(3, 3),
@@ -423,32 +423,39 @@ local function createToggle(parent, module, settingName, title)
     corner(knob, 10)
 
     local function refresh(animated)
-    local enabled = getSetting(module, settingName) == true
+        local enabled = getSetting(module, settingName) == true
 
-    local targetPosition = enabled
-        and UDim2.new(1, -19, 0, 3)
-        or UDim2.fromOffset(3, 3)
+        local targetPosition = enabled
+            and UDim2.new(1, -19, 0, 3)
+            or UDim2.fromOffset(3, 3)
 
-    local targetColor = enabled
-        and Color3.fromRGB(135, 85, 255)
-        or Color3.fromRGB(45, 46, 54)
+        local targetColor = enabled and Accent or ElementBackground
+        local knobColor = enabled and TextColor or SubTextColor
 
-    local knobColor = enabled
-        and Color3.fromRGB(255, 255, 255)
-        or Color3.fromRGB(180, 182, 190)
-
-    if animated then
-        tween(button, {BackgroundColor3 = targetColor})
-        tween(knob, {
-            Position = targetPosition,
-            BackgroundColor3 = knobColor,
-        })
-    else
-        button.BackgroundColor3 = targetColor
-        knob.Position = targetPosition
-        knob.BackgroundColor3 = knobColor
+        if animated then
+            tween(button, {BackgroundColor3 = targetColor})
+            tween(knob, {
+                Position = targetPosition,
+                BackgroundColor3 = knobColor,
+            })
+        else
+            button.BackgroundColor3 = targetColor
+            knob.Position = targetPosition
+            knob.BackgroundColor3 = knobColor
+        end
     end
+
+    button.MouseButton1Click:Connect(function()
+        local enabled = getSetting(module, settingName) ~= true
+        setSetting(module, settingName, enabled)
+        refresh(true)
+    end)
+
+    refresh(false)
+
+    return row
 end
+
     
   button.MouseButton1Click:Connect(function()
     local enabled = getSetting(module, settingName) ~= true
