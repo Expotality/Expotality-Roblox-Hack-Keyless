@@ -70,6 +70,31 @@ local function stroke(parent, color, transparency)
     return s
 end
 
+local function gradient(parent, rotation)
+    local g = Instance.new("UIGradient")
+    g.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(155, 80, 255)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(40, 220, 255)),
+    })
+    g.Rotation = rotation or 0
+    g.Parent = parent
+    return g
+end
+
+local function tween(object, properties, duration)
+    local animation = TweenService:Create(
+        object,
+        TweenInfo.new(
+            duration or 0.18,
+            Enum.EasingStyle.Quint,
+            Enum.EasingDirection.Out
+        ),
+        properties
+    )
+    animation:Play()
+    return animation
+end
+
 local function getSetting(module, name)
 
     if module.GetSetting then
