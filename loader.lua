@@ -1,4 +1,10 @@
 
+game:GetService("StarterGui"):SetCore("SendNotification", {
+    Title = "Menu Debug",
+    Text = "Loader started!",
+    Duration = 5
+})
+
 local BASE_URL = "https://raw.githubusercontent.com/Expotality/Expotality-Roblox-Hack-Keyless/main/"
 
 local function fetch(path)
