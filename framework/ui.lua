@@ -73,8 +73,8 @@ end
 local function gradient(parent, rotation)
     local g = Instance.new("UIGradient")
     g.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(155, 80, 255)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(40, 220, 255)),
+        ColorSequenceKeypoint.new(0, Accent),
+        ColorSequenceKeypoint.new(1, ElementHover),
     })
     g.Rotation = rotation or 0
     g.Parent = parent
