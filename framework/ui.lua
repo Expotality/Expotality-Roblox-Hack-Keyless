@@ -2261,6 +2261,304 @@ local function renderTab(tabName)
         end
     end
 
+    
+    --------------------------------------------------------
+    -- PRESETS PANEL (UTILITIES)
+    --------------------------------------------------------
+
+    if tabName == "Utilities" then
+        local panel = create("Frame", {
+            BackgroundColor3 = SidebarBackground,
+            BorderSizePixel = 0,
+            Size = UDim2.new(1, 0, 0, 250),
+            ZIndex = 3,
+            Parent = Content,
+        })
+
+        corner(panel, 8)
+        stroke(panel, BorderColor)
+
+        create("TextLabel", {
+            BackgroundTransparency = 1,
+            Text = "Presets",
+            TextColor3 = TextColor,
+            TextSize = 16,
+            Font = Enum.Font.GothamBold,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            Position = UDim2.fromOffset(14, 8),
+            Size = UDim2.new(1, -28, 0, 24),
+            ZIndex = 4,
+            Parent = panel,
+        })
+
+        local nameInput = create("TextBox", {
+            BackgroundColor3 = ElementBackground,
+            BorderSizePixel = 0,
+            PlaceholderText = "Enter preset name...",
+            Text = "",
+            PlaceholderColor3 = SubTextColor,
+            TextColor3 = TextColor,
+            TextSize = 12,
+            Font = Enum.Font.Gotham,
+            ClearTextOnFocus = false,
+            Position = UDim2.fromOffset(12, 40),
+            Size = UDim2.new(1, -122, 0, 32),
+            ZIndex = 4,
+            Parent = panel,
+        })
+
+        corner(nameInput, 5)
+
+        local saveButton = create("TextButton", {
+            BackgroundColor3 = Accent,
+            BorderSizePixel = 0,
+            Text = "Save Preset",
+            TextColor3 = Color3.new(1, 1, 1),
+            TextSize = 11,
+            Font = Enum.Font.GothamBold,
+            Position = UDim2.new(1, -102, 0, 40),
+            Size = UDim2.fromOffset(90, 32),
+            ZIndex = 4,
+            Parent = panel,
+        })
+
+        corner(saveButton, 5)
+
+        local status = create("TextLabel", {
+            BackgroundTransparency = 1,
+            Text = "",
+            TextColor3 = SubTextColor,
+            TextSize = 11,
+            Font = Enum.Font.Gotham,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            Position = UDim2.fromOffset(14, 75),
+            Size = UDim2.new(1, -28, 0, 20),
+            ZIndex = 4,
+            Parent = panel,
+        })
+
+        local presetList = create("ScrollingFrame", {
+            BackgroundColor3 = ElementBackground,
+            BorderSizePixel = 0,
+            Position = UDim2.fromOffset(12, 99),
+            Size = UDim2.new(1, -24, 0, 138),
+            CanvasSize = UDim2.new(0, 0, 0, 0),
+            AutomaticCanvasSize = Enum.AutomaticSize.Y,
+            ScrollBarThickness = 4,
+            ScrollBarImageColor3 = Accent,
+            Active = true,
+            ZIndex = 4,
+            Parent = panel,
+        })
+
+        corner(presetList, 5)
+
+        local listLayout = Instance.new("UIListLayout")
+        listLayout.Padding = UDim.new(0, 5)
+        listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+        listLayout.Parent = presetList
+
+        local listPadding = Instance.new("UIPadding")
+        listPadding.PaddingTop = UDim.new(0, 5)
+        listPadding.PaddingLeft = UDim.new(0, 5)
+        listPadding.PaddingRight = UDim.new(0, 5)
+        listPadding.PaddingBottom = UDim.new(0, 5)
+        listPadding.Parent = presetList
+
+        local function refreshPresets()
+            for _, child in ipairs(presetList:GetChildren()) do
+                if child:IsA("Frame") then
+                    child:Destroy()
+                end
+            end
+
+            if not ConfigManager then
+                status.Text = "Config manager unavailable."
+                return
+            end
+
+            local success, presets = pcall(function()
+                return ConfigManager.List()
+            end)
+
+            if not success then
+                status.Text = "Could not list presets."
+                warn("[Menu] Preset list failed: " .. tostring(presets))
+                return
+            end
+
+            if #presets == 0 then
+                status.Text = "No named presets saved yet."
+                return
+            end
+
+            status.Text = "Saved presets: " .. tostring(#presets)
+
+            for index, presetName in ipairs(presets) do
+                local row = create("Frame", {
+                    BackgroundColor3 = SidebarBackground,
+                    BorderSizePixel = 0,
+                    Size = UDim2.new(1, -2, 0, 36),
+                    LayoutOrder = index,
+                    ZIndex = 5,
+                    Parent = presetList,
+                })
+
+                corner(row, 4)
+
+                create("TextLabel", {
+                    BackgroundTransparency = 1,
+                    Text = presetName,
+                    TextColor3 = TextColor,
+                    TextSize = 11,
+                    Font = Enum.Font.GothamMedium,
+                    TextXAlignment = Enum.TextXAlignment.Left,
+                    TextTruncate = Enum.TextTruncate.AtEnd,
+                    Position = UDim2.fromOffset(8, 0),
+                    Size = UDim2.new(1, -145, 1, 0),
+                    ZIndex = 6,
+                    Parent = row,
+                })
+
+                local loadButton = create("TextButton", {
+                    BackgroundColor3 = Accent,
+                    BorderSizePixel = 0,
+                    Text = "Load",
+                    TextColor3 = Color3.new(1, 1, 1),
+                    TextSize = 10,
+                    Font = Enum.Font.GothamBold,
+                    Position = UDim2.new(1, -132, 0.5, -12),
+                    Size = UDim2.fromOffset(58, 24),
+                    ZIndex = 6,
+                    Parent = row,
+                })
+
+                corner(loadButton, 4)
+
+                loadButton.MouseButton1Click:Connect(function()
+                    local loaded, snapshot = pcall(function()
+                        return ConfigManager.Load(presetName)
+                    end)
+
+                    if not loaded or type(snapshot) ~= "table"
+                        or type(snapshot.Modules) ~= "table" then
+                        status.Text = "Could not load preset."
+                        warn("[Menu] Preset load failed: " .. tostring(snapshot))
+                        return
+                    end
+
+                    IsRestoringSettings = true
+
+                    local applied, applyError = pcall(function()
+                        for moduleName, savedSettings in pairs(snapshot.Modules) do
+                            local module = Registry:Get(moduleName)
+
+                            if module and type(savedSettings) == "table" then
+                                for settingName, savedValue in pairs(savedSettings) do
+                                    if module.Settings
+                                        and module.Settings[settingName] ~= nil then
+                                        setSetting(
+                                            module,
+                                            settingName,
+                                            decodeValue(savedValue)
+                                        )
+                                    end
+                                end
+                            end
+                        end
+
+                        for moduleName, savedSettings in pairs(snapshot.Modules) do
+                            local module = Registry:Get(moduleName)
+                            local enabled = savedSettings
+                                and savedSettings.Enabled
+
+                            if module and type(enabled) == "boolean" then
+                                if enabled and module.Enable then
+                                    module:Enable()
+                                elseif not enabled and module.Disable then
+                                    module:Disable()
+                                end
+                            end
+                        end
+                    end)
+
+                    IsRestoringSettings = false
+
+                    if not applied then
+                        status.Text = "Preset apply failed."
+                        warn("[Menu] Preset apply failed: " .. tostring(applyError))
+                        return
+                    end
+
+                    saveLastSession()
+                    status.Text = "Loaded: " .. presetName
+                    renderTab("Utilities")
+                end)
+
+                local deleteButton = create("TextButton", {
+                    BackgroundColor3 = ElementBackground,
+                    BorderSizePixel = 0,
+                    Text = "Delete",
+                    TextColor3 = TextColor,
+                    TextSize = 10,
+                    Font = Enum.Font.GothamBold,
+                    Position = UDim2.new(1, -68, 0.5, -12),
+                    Size = UDim2.fromOffset(60, 24),
+                    ZIndex = 6,
+                    Parent = row,
+                })
+
+                corner(deleteButton, 4)
+
+                deleteButton.MouseButton1Click:Connect(function()
+                    local deleted, deleteError = pcall(function()
+                        ConfigManager.Delete(presetName)
+                    end)
+
+                    if not deleted then
+                        status.Text = "Delete failed."
+                        warn("[Menu] Preset delete failed: " .. tostring(deleteError))
+                        return
+                    end
+
+                    status.Text = "Deleted: " .. presetName
+                    refreshPresets()
+                end)
+            end
+        end
+
+        saveButton.MouseButton1Click:Connect(function()
+            if not ConfigManager then
+                status.Text = "Config manager unavailable."
+                return
+            end
+
+            local name = nameInput.Text
+            if name:match("^%s*$") then
+                status.Text = "Enter a preset name first."
+                return
+            end
+
+            local saved, result = pcall(function()
+                return ConfigManager.Save(name, createSettingsSnapshot())
+            end)
+
+            if not saved then
+                status.Text = "Save failed."
+                warn("[Menu] Preset save failed: " .. tostring(result))
+                return
+            end
+
+            nameInput.Text = ""
+            status.Text = "Saved: " .. tostring(result)
+            refreshPresets()
+        end)
+
+        refreshPresets()
+    end
+
+
+    
     local modules =
         Registry:GetByTab(tabName)
 
