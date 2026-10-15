@@ -88,15 +88,13 @@ local function getSetting(module, name)
     return nil
 end
 
-local function setSetting(module, name, value)
 
+local saveLastSession
+
+local function setSetting(module, name, value)
     if module.SetSetting then
         module:SetSetting(name, value)
-        return
-    end
-
-    if module.Settings then
-
+    elseif module.Settings then
         local setting = module.Settings[name]
 
         if typeof(setting) == "table" then
@@ -104,6 +102,10 @@ local function setSetting(module, name, value)
         else
             module.Settings[name] = value
         end
+    end
+
+    if not IsRestoringSettings and saveLastSession then
+        saveLastSession()
     end
 end
 
