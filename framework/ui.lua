@@ -246,8 +246,13 @@ saveLastSession = function()
     end
 end
 
+
 local function restoreKeybinds(savedKeybinds)
     if type(savedKeybinds) ~= "table" then
+        return
+    end
+
+    if not Registry then
         return
     end
 
@@ -256,26 +261,32 @@ local function restoreKeybinds(savedKeybinds)
         local data = module and Keybinds[module]
 
         if data and type(keyName) == "string" then
-            if keyName == "None" then
-                data.Key = nil
-            else
-                local keyCode = Enum.KeyCode[keyName]
+            local restoredKey = nil
 
-                if keyCode then
-                    data.Key = keyCode
+            if keyName ~= "None" then
+                local success, keyCode = pcall(function()
+                    return Enum.KeyCode[keyName]
+                end)
+
+                if success and typeof(keyCode) == "EnumItem"
+                    and keyCode.EnumType == Enum.KeyCode then
+                    restoredKey = keyCode
                 end
             end
 
+            data.Key = restoredKey
+
             if data.Button then
                 data.Button.Text =
-                    data.Key and data.Key.Name or "None"
+                    restoredKey and restoredKey.Name or "None"
 
                 data.Button.TextColor3 =
-                    data.Key and TextColor or SubTextColor
+                    restoredKey and TextColor or SubTextColor
             end
         end
     end
 end
+
 
 local function restoreLastSession()
     if not ConfigManager or not Registry then
