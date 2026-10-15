@@ -60,6 +60,12 @@ return {
     },
 
     {
+    Name = "Aimbot",
+    File = "modules/combat/aimbot.lua",
+    Tab = "Combat"
+    },
+
+    {
     Name = "Anti-AFK",
     File = "modules/events/anti_afk.lua",
     Tab = "Events"
