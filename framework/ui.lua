@@ -189,10 +189,12 @@ local function decodeValue(value)
     return result
 end
 
+
 local function createSettingsSnapshot()
     local snapshot = {
-        Version = 1,
+        Version = 2,
         Modules = {},
+        Keybinds = {},
     }
 
     if not Registry then
@@ -213,8 +215,17 @@ local function createSettingsSnapshot()
         snapshot.Modules[moduleName] = moduleSettings
     end
 
+    for moduleName, module in pairs(Registry:GetAll()) do
+        local data = Keybinds[module]
+
+        if data and data.Key then
+            snapshot.Keybinds[moduleName] = data.Key.Name
+        end
+    end
+
     return snapshot
 end
+
 
 saveLastSession = function()
     if IsRestoringSettings or not ConfigManager then
