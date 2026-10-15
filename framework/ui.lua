@@ -190,6 +190,7 @@ local function decodeValue(value)
 end
 
 
+
 local function createSettingsSnapshot()
     local snapshot = {
         Version = 2,
@@ -204,27 +205,27 @@ local function createSettingsSnapshot()
     for moduleName, module in pairs(Registry:GetAll()) do
         local moduleSettings = {}
 
-        for settingName in pairs(module.Settings or {}) do
-            local value = getSetting(module, settingName)
-
-            if value ~= nil then
-                moduleSettings[settingName] = encodeValue(value)
+        -- Save module settings.
+        if module.Settings then
+            for settingName, setting in pairs(module.Settings) do
+                moduleSettings[settingName] = encodeValue(
+                    getSetting(module, settingName)
+                )
             end
         end
 
         snapshot.Modules[moduleName] = moduleSettings
-    end
 
-    for moduleName, module in pairs(Registry:GetAll()) do
+        -- Save the keybind, including cleared keybinds.
         local data = Keybinds[module]
 
-        if data and data.Key then
-            snapshot.Keybinds[moduleName] = data.Key.Name
-        end
+        snapshot.Keybinds[moduleName] =
+            data and data.Key and data.Key.Name or "None"
     end
 
     return snapshot
 end
+
 
 
 saveLastSession = function()
