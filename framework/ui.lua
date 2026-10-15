@@ -6,6 +6,8 @@ local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 
 local Registry
+local ConfigManager
+local IsRestoringSettings = false
 local ScreenGui
 local Main
 local Content
