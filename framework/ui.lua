@@ -2569,6 +2569,7 @@ local function renderTab(tabName)
                 loadButton.MouseButton1Click:Connect(function()
                     local loaded, snapshot = pcall(function()
                         return ConfigManager.Load(presetName)
+                        restoreKeybinds(snapshot.Keybinds)
                     end)
 
                     if not loaded or type(snapshot) ~= "table"
