@@ -241,8 +241,10 @@ saveLastSession = function()
     end
 end
 
+
+
 local function restoreLastSession()
-    if not ConfigManager then
+    if not ConfigManager or not Registry then
         return
     end
 
@@ -254,6 +256,50 @@ local function restoreLastSession()
         warn("[Menu] Could not load LastSession: " .. tostring(snapshot))
         return
     end
+
+    if type(snapshot) ~= "table" then
+        return
+    end
+
+    -- Restore module settings and enabled states.
+    if type(snapshot.Modules) == "table" then
+        for moduleName, settings in pairs(snapshot.Modules) do
+            local module = Registry:Get(moduleName)
+
+            if module and type(settings) == "table" then
+                for settingName, value in pairs(settings) do
+                    local decodedValue = decodeValue(value)
+
+                    if decodedValue ~= nil then
+                        setSetting(module, settingName, decodedValue)
+                    end
+                end
+            end
+        end
+    end
+
+    -- Restore keybinds.
+    if type(snapshot.Keybinds) == "table" then
+        for moduleName, keyName in pairs(snapshot.Keybinds) do
+            local module = Registry:Get(moduleName)
+            local data = module and Keybinds[module]
+
+            if data and type(keyName) == "string" then
+                local keyCode = Enum.KeyCode[keyName]
+
+                if keyCode then
+                    data.Key = keyCode
+
+                    if data.Button then
+                        data.Button.Text = keyName
+                        data.Button.TextColor3 = TextColor
+                    end
+                end
+            end
+        end
+    end
+end
+
 
     if type(snapshot) ~= "table"
         or type(snapshot.Modules) ~= "table" then
