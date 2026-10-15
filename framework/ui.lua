@@ -2330,30 +2330,20 @@ local function createModule(parent, module)
                             height + 6
                     end
 
+
                 ------------------------------------------------
                 -- TYPED SETTINGS
                 ------------------------------------------------
 
                 elseif typeof(value) == "table" then
 
-                    local settingType =
-                        value.Type
-
-                    local default =
-                        value.Default
+                    local settingType = value.Type
+                    local default = value.Default
 
                     if settingType == "Number" then
 
-                        if getSetting(
-                            module,
-                            settingName
-                        ) == nil then
-
-                            setSetting(
-                                module,
-                                settingName,
-                                default
-                            )
+                        if getSetting(module, settingName) == nil then
+                            setSetting(module, settingName, default)
                         end
 
                         createNumber(
@@ -2363,21 +2353,30 @@ local function createModule(parent, module)
                             title
                         )
 
-                        settingsHeight +=
-                            42 + 6
+                        settingsHeight += 42 + 6
+
+                    elseif settingType == "Slider" then
+
+                        if getSetting(module, settingName) == nil then
+                            setSetting(module, settingName, default)
+                        end
+
+                        createSlider(
+                            settingsFrame,
+                            module,
+                            settingName,
+                            title,
+                            value.Min,
+                            value.Max,
+                            value.Step
+                        )
+
+                        settingsHeight += 48 + 6
 
                     elseif settingType == "Boolean" then
 
-                        if getSetting(
-                            module,
-                            settingName
-                        ) == nil then
-
-                            setSetting(
-                                module,
-                                settingName,
-                                default
-                            )
+                        if getSetting(module, settingName) == nil then
+                            setSetting(module, settingName, default)
                         end
 
                         createToggle(
@@ -2387,8 +2386,7 @@ local function createModule(parent, module)
                             title
                         )
 
-                        settingsHeight +=
-                            42 + 6
+                        settingsHeight += 42 + 6
                     end
                 end
             end
