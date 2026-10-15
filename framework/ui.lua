@@ -1101,6 +1101,8 @@ UserInputService.InputBegan:Connect(function(
 
         data.Button.TextColor3 =
             TextColor
+            
+            saveLastSession()
 
         return
     end
