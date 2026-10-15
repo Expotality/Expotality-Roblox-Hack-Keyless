@@ -257,10 +257,6 @@ local function restoreLastSession()
         return
     end
 
-    if type(snapshot) ~= "table" then
-        return
-    end
-
     -- Restore module settings and enabled states.
     if type(snapshot.Modules) == "table" then
         for moduleName, settings in pairs(snapshot.Modules) do
