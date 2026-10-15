@@ -109,6 +109,168 @@ local function setSetting(module, name, value)
     end
 end
 
+
+local function encodeValue(value)
+    if typeof(value) == "Color3" then
+        return {
+            __type = "Color3",
+            R = value.R,
+            G = value.G,
+            B = value.B,
+        }
+    end
+
+    if type(value) == "table" then
+        local result = {}
+
+        for key, item in pairs(value) do
+            if type(key) == "string" or type(key) == "number" then
+                result[key] = encodeValue(item)
+            end
+        end
+
+        return result
+    end
+
+    if type(value) == "string"
+        or type(value) == "number"
+        or type(value) == "boolean" then
+        return value
+    end
+
+    return nil
+end
+
+local function decodeValue(value)
+    if type(value) ~= "table" then
+        return value
+    end
+
+    if value.__type == "Color3"
+        and type(value.R) == "number"
+        and type(value.G) == "number"
+        and type(value.B) == "number" then
+        return Color3.new(value.R, value.G, value.B)
+    end
+
+    local result = {}
+
+    for key, item in pairs(value) do
+        result[key] = decodeValue(item)
+    end
+
+    return result
+end
+
+local function createSettingsSnapshot()
+    local snapshot = {
+        Version = 1,
+        Modules = {},
+    }
+
+    if not Registry then
+        return snapshot
+    end
+
+    for moduleName, module in pairs(Registry:GetAll()) do
+        local moduleSettings = {}
+
+        for settingName in pairs(module.Settings or {}) do
+            local value = getSetting(module, settingName)
+
+            if value ~= nil then
+                moduleSettings[settingName] = encodeValue(value)
+            end
+        end
+
+        snapshot.Modules[moduleName] = moduleSettings
+    end
+
+    return snapshot
+end
+
+saveLastSession = function()
+    if IsRestoringSettings or not ConfigManager then
+        return
+    end
+
+    local success, err = pcall(function()
+        ConfigManager.SaveLast(createSettingsSnapshot())
+    end)
+
+    if not success then
+        warn("[Menu] Autosave failed: " .. tostring(err))
+    end
+end
+
+local function restoreLastSession()
+    if not ConfigManager then
+        return
+    end
+
+    local success, snapshot = pcall(function()
+        return ConfigManager.LoadLast()
+    end)
+
+    if not success then
+        warn("[Menu] Could not load LastSession: " .. tostring(snapshot))
+        return
+    end
+
+    if type(snapshot) ~= "table"
+        or type(snapshot.Modules) ~= "table" then
+        return
+    end
+
+    IsRestoringSettings = true
+
+    local restoreSuccess, restoreError = pcall(function()
+        for moduleName, savedSettings in pairs(snapshot.Modules) do
+            local module = Registry:Get(moduleName)
+
+            if module and type(savedSettings) == "table" then
+                for settingName, savedValue in pairs(savedSettings) do
+                    local value = decodeValue(savedValue)
+
+                    if module.Settings
+                        and module.Settings[settingName] ~= nil then
+                        setSetting(module, settingName, value)
+                    end
+                end
+            end
+        end
+
+        -- Reapply enabled states after restoring all settings.
+        for moduleName, savedSettings in pairs(snapshot.Modules) do
+            local module = Registry:Get(moduleName)
+            local enabled = savedSettings
+                and savedSettings.Enabled
+
+            if module and type(enabled) == "boolean" then
+                if enabled then
+                    if module.Enable then
+                        module:Enable()
+                    end
+                else
+                    if module.Disable then
+                        module:Disable()
+                    end
+                end
+            end
+        end
+    end)
+
+    IsRestoringSettings = false
+
+    if not restoreSuccess then
+        warn("[Menu] Settings restore failed: " .. tostring(restoreError))
+    end
+
+    -- Rewrite the session using the current version of the settings.
+    saveLastSession()
+end
+
+
 local function enableModule(module)
 
     setSetting(module, "Enabled", true)
