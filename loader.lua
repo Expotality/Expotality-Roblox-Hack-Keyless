@@ -19,12 +19,18 @@ local function loadRemote(path)
     local source = fetch(path)
 
     local success, result = pcall(function()
-        return loadstring(source)()
+        local chunk, compileError = loadstring(source)
+
+        if not chunk then
+            error(compileError)
+        end
+
+        return chunk()
     end)
 
     if not success then
         warn("[Menu] Failed to load " .. path)
-        warn(result)
+        warn(tostring(result))
         return nil
     end
 
@@ -54,6 +60,13 @@ if not configManager then
     error("[Menu] ConfigManager failed to load.")
 end
 
+-- Load shared theme helpers
+local theme = loadRemote("framework/Theme.lua")
+
+if not theme then
+    error("[Menu] Theme module failed to load.")
+end
+
 -- Load UI
 local ui = loadRemote("framework/ui.lua")
 
@@ -64,8 +77,7 @@ end
 -- Register modules
 registry:LoadManifest(manifest, BASE_URL)
 
--- Initialize UI with configuration manager
-ui:Initialize(registry, configManager)
+-- Initialize UI with configuration and theme modules
+ui:Initialize(registry, configManager, theme)
 
 print("[Menu] Loaded successfully.")
-
