@@ -1,14 +1,27 @@
+
 local Registry = {}
 
 Registry.Modules = {}
-Registry.ByTab = {}
+
+------------------------------------------------------------
+-- DEFAULT TABS
+------------------------------------------------------------
+
+Registry.ByTab = {
+    Visuals = {},
+    Movement = {},
+    Combat = {},
+    Events = {},
+    Customization = {},
+    Utilities = {},
+}
 
 ------------------------------------------------------------
 -- REGISTER
 ------------------------------------------------------------
 
 function Registry:Register(Module)
-    if not Module or not Module.Name then
+    if type(Module) ~= "table" or not Module.Name then
         warn("[Registry] Invalid module.")
         return false
     end
@@ -18,9 +31,15 @@ function Registry:Register(Module)
         return false
     end
 
-    self.Modules[Module.Name] = Module
-
     local Tab = Module.Tab or "Utilities"
+
+    if type(Tab) ~= "string" or Tab == "" then
+        Tab = "Utilities"
+    end
+
+    Module.Tab = Tab
+
+    self.Modules[Module.Name] = Module
 
     if not self.ByTab[Tab] then
         self.ByTab[Tab] = {}
@@ -56,28 +75,40 @@ function Registry:LoadManifest(Manifest, BaseURL)
         local File = Entry.File
         local Tab = Entry.Tab
 
-        if not Name or not File then
-            warn("[Registry] Manifest entry is missing Name or File.")
+        if type(Name) ~= "string" or Name == ""
+            or type(File) ~= "string" or File == "" then
+            warn("[Registry] Manifest entry is missing a valid Name or File.")
             continue
         end
 
-        local Success, Source = pcall(function()
+        local DownloadSuccess, Source = pcall(function()
             return game:HttpGet(BaseURL .. File)
         end)
 
-        if not Success then
+        if not DownloadSuccess then
             warn("[Registry] Failed to download: " .. File)
-            warn(Source)
+            warn(tostring(Source))
             continue
         end
 
-        local LoadSuccess, Module = pcall(function()
-            return loadstring(Source)()
-        end)
+        if type(Source) ~= "string" or Source == "" then
+            warn("[Registry] Empty source: " .. File)
+            continue
+        end
 
-        if not LoadSuccess then
-            warn("[Registry] Failed to load: " .. File)
-            warn(Module)
+        local CompileSuccess, Chunk, CompileError = pcall(loadstring, Source)
+
+        if not CompileSuccess or type(Chunk) ~= "function" then
+            warn("[Registry] Failed to compile: " .. File)
+            warn(tostring(CompileError or Chunk))
+            continue
+        end
+
+        local ExecuteSuccess, Module = pcall(Chunk)
+
+        if not ExecuteSuccess then
+            warn("[Registry] Failed to execute: " .. File)
+            warn(tostring(Module))
             continue
         end
 
@@ -86,17 +117,15 @@ function Registry:LoadManifest(Manifest, BaseURL)
             continue
         end
 
-        -- Manifest controls where the module appears.
+        -- Manifest metadata takes priority.
         Module.Name = Name
 
-        if Tab then
+        if type(Tab) == "string" and Tab ~= "" then
             Module.Tab = Tab
         end
 
-        local Registered = self:Register(Module)
-
-        if Registered then
-            print("[Registry] Loaded: " .. Name)
+        if self:Register(Module) then
+            print("[Registry] Loaded: " .. Name .. " [" .. Module.Tab .. "]")
         end
     end
 
@@ -114,22 +143,30 @@ function Registry:Unregister(Name)
         return false
     end
 
-    if Module.Destroy then
-        Module:Destroy()
+    if type(Module.Destroy) == "function" then
+        local Success, Err = pcall(function()
+            Module:Destroy()
+        end)
+
+        if not Success then
+            warn("[Registry] Destroy failed for " .. Name .. ": " .. tostring(Err))
+        end
+    elseif type(Module.Disable) == "function" then
+        pcall(function()
+            Module:Disable()
+        end)
     end
 
     self.Modules[Name] = nil
 
-    for Tab, Modules in pairs(self.ByTab) do
-        for Index, RegisteredModule in ipairs(Modules) do
-            if RegisteredModule == Module then
-                table.remove(Modules, Index)
-                break
-            end
-        end
+    local Tab = Module.Tab
+    local TabModules = Tab and self.ByTab[Tab]
 
-        if #Modules == 0 then
-            self.ByTab[Tab] = nil
+    if TabModules then
+        for Index = #TabModules, 1, -1 do
+            if TabModules[Index] == Module then
+                table.remove(TabModules, Index)
+            end
         end
     end
 
@@ -167,47 +204,61 @@ end
 function Registry:Enable(Name)
     local Module = self:Get(Name)
 
-    if not Module then
+    if not Module or type(Module.Enable) ~= "function" then
         return false
     end
 
-    if Module.Enable then
-        Module:Enable()
-        return true
+    local Success, Result = pcall(function()
+        return Module:Enable()
+    end)
+
+    if not Success then
+        warn("[Registry] Enable failed for " .. Name .. ": " .. tostring(Result))
+        return false
     end
 
-    return false
+    if Module.Settings then
+        Module.Settings.Enabled = true
+    end
+
+    return true
 end
 
 function Registry:Disable(Name)
     local Module = self:Get(Name)
 
-    if not Module then
+    if not Module or type(Module.Disable) ~= "function" then
         return false
     end
 
-    if Module.Disable then
-        Module:Disable()
-        return true
+    local Success, Result = pcall(function()
+        return Module:Disable()
+    end)
+
+    if not Success then
+        warn("[Registry] Disable failed for " .. Name .. ": " .. tostring(Result))
+        return false
     end
 
-    return false
+    if Module.Settings then
+        Module.Settings.Enabled = false
+    end
+
+    return true
 end
+
+------------------------------------------------------------
+-- TOGGLE
+------------------------------------------------------------
 
 function Registry:Toggle(Name)
     local Module = self:Get(Name)
 
-    if not Module then
+    if not Module or not Module.Settings then
         return false
     end
 
-    if not Module.Settings then
-        return false
-    end
-
-    local Enabled = Module.Settings.Enabled
-
-    if Enabled then
+    if Module.Settings.Enabled then
         return self:Disable(Name)
     else
         return self:Enable(Name)
@@ -225,15 +276,20 @@ function Registry:SetSetting(Name, Setting, Value)
         return false
     end
 
-    if Module.SetSetting then
-        return Module:SetSetting(Setting, Value)
-    end
+    if type(Module.SetSetting) == "function" then
+        local Success, Result = pcall(function()
+            return Module:SetSetting(Setting, Value)
+        end)
 
-    if Module.Settings then
-        if Module.Settings[Setting] == nil then
+        if not Success then
+            warn("[Registry] Setting update failed for " .. Name .. ": " .. tostring(Result))
             return false
         end
 
+        return Result ~= false
+    end
+
+    if Module.Settings and Module.Settings[Setting] ~= nil then
         Module.Settings[Setting] = Value
         return true
     end
@@ -262,7 +318,7 @@ function Registry:PrintModules()
         print("[" .. Tab .. "]")
 
         for _, Module in ipairs(Modules) do
-            print("  • " .. Module.Name)
+            print("  - " .. Module.Name)
         end
     end
 
