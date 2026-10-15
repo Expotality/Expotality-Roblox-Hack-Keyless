@@ -422,33 +422,34 @@ local function createToggle(parent, module, settingName, title)
 
     corner(knob, 10)
 
-    local function refresh()
+    local function refresh(animated)
+    local enabled = getSetting(module, settingName) == true
 
-        local enabled =
-            getSetting(module, settingName) == true
+    local targetPosition = enabled
+        and UDim2.new(1, -19, 0, 3)
+        or UDim2.fromOffset(3, 3)
 
-        if enabled then
+    local targetColor = enabled
+        and Color3.fromRGB(135, 85, 255)
+        or Color3.fromRGB(45, 46, 54)
 
-            button.BackgroundColor3 = Accent
-            knob.BackgroundColor3 =
-                Color3.fromRGB(255, 255, 255)
+    local knobColor = enabled
+        and Color3.fromRGB(255, 255, 255)
+        or Color3.fromRGB(180, 182, 190)
 
-            knob.Position =
-                UDim2.new(1, -19, 0, 3)
-
-        else
-
-            button.BackgroundColor3 =
-                Color3.fromRGB(45, 46, 54)
-
-            knob.BackgroundColor3 =
-                Color3.fromRGB(180, 182, 190)
-
-            knob.Position =
-                UDim2.fromOffset(3, 3)
-        end
+    if animated then
+        tween(button, {BackgroundColor3 = targetColor})
+        tween(knob, {
+            Position = targetPosition,
+            BackgroundColor3 = knobColor,
+        })
+    else
+        button.BackgroundColor3 = targetColor
+        knob.Position = targetPosition
+        knob.BackgroundColor3 = knobColor
     end
-
+end
+    
     button.MouseButton1Click:Connect(function()
 
         if settingName == "Enabled" then
