@@ -359,56 +359,6 @@ local function restoreLastSession()
     saveLastSession()
 end
 
-
-    IsRestoringSettings = true
-
-    local restoreSuccess, restoreError = pcall(function()
-        for moduleName, savedSettings in pairs(snapshot.Modules) do
-            local module = Registry:Get(moduleName)
-
-            if module and type(savedSettings) == "table" then
-                for settingName, savedValue in pairs(savedSettings) do
-                    local value = decodeValue(savedValue)
-
-                    if module.Settings
-                        and module.Settings[settingName] ~= nil then
-                        setSetting(module, settingName, value)
-                    end
-                end
-            end
-        end
-
-        -- Reapply enabled states after restoring all settings.
-        for moduleName, savedSettings in pairs(snapshot.Modules) do
-            local module = Registry:Get(moduleName)
-            local enabled = savedSettings
-                and savedSettings.Enabled
-
-            if module and type(enabled) == "boolean" then
-                if enabled then
-                    if module.Enable then
-                        module:Enable()
-                    end
-                else
-                    if module.Disable then
-                        module:Disable()
-                    end
-                end
-            end
-        end
-    end)
-
-    IsRestoringSettings = false
-
-    if not restoreSuccess then
-        warn("[Menu] Settings restore failed: " .. tostring(restoreError))
-    end
-
-    -- Rewrite the session using the current version of the settings.
-    saveLastSession()
-end
-
-
 local function enableModule(module)
 
     setSetting(module, "Enabled", true)
