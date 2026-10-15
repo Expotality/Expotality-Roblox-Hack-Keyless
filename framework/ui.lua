@@ -95,25 +95,29 @@ local function tween(object, properties, duration)
     return animation
 end
 
-local function getSetting(module, name)
 
-    if module.GetSetting then
-        return module:GetSetting(name)
+local function getSetting(module, settingName)
+    if not module or not module.Settings then
+        return nil
     end
 
-    if module.Settings then
+    local setting = module.Settings[settingName]
 
-        local value = module.Settings[name]
+    if setting == nil then
+        return nil
+    end
 
-        if typeof(value) == "table" then
-            return value.Value or value.Default
+    if type(setting) == "table" then
+        if setting.Value ~= nil then
+            return setting.Value
         end
 
-        return value
+        return setting.Default
     end
 
-    return nil
+    return setting
 end
+
 
 
 local saveLastSession
