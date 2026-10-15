@@ -287,45 +287,66 @@ local function restoreLastSession()
         return
     end
 
-    -- Restore module settings and enabled states.
-    if type(snapshot.Modules) == "table" then
-        for moduleName, settings in pairs(snapshot.Modules) do
-            local module = Registry:Get(moduleName)
+    if type(snapshot) ~= "table" then
+        return
+    end
 
-            if module and type(settings) == "table" then
-                for settingName, value in pairs(settings) do
-                    local decodedValue = decodeValue(value)
+    local previousRestoreState = IsRestoringSettings
+    IsRestoringSettings = true
 
-                    if decodedValue ~= nil then
-                        setSetting(module, settingName, decodedValue)
+    local restored, restoreError = pcall(function()
+        -- Restore module settings first.
+        if type(snapshot.Modules) == "table" then
+            for moduleName, settings in pairs(snapshot.Modules) do
+                local module = Registry:Get(moduleName)
+
+                if module and type(settings) == "table" then
+                    for settingName, value in pairs(settings) do
+                        local decodedValue = decodeValue(value)
+
+                        if decodedValue ~= nil then
+                            setSetting(
+                                module,
+                                settingName,
+                                decodedValue
+                            )
+                        end
+                    end
+                end
+            end
+
+            -- Restore enabled states after settings.
+            for moduleName, settings in pairs(snapshot.Modules) do
+                local module = Registry:Get(moduleName)
+                local enabled = settings
+                    and decodeValue(settings.Enabled)
+
+                if module and type(enabled) == "boolean" then
+                    if enabled and module.Enable then
+                        module:Enable()
+                    elseif not enabled and module.Disable then
+                        module:Disable()
                     end
                 end
             end
         end
+
+        -- Restore keybinds.
+        restoreKeybinds(snapshot.Keybinds)
+    end)
+
+    IsRestoringSettings = previousRestoreState
+
+    if not restored then
+        warn(
+            "[Menu] Settings restore failed: "
+            .. tostring(restoreError)
+        )
+        return
     end
 
-    -- Restore keybinds.
-    if type(snapshot.Keybinds) == "table" then
-        for moduleName, keyName in pairs(snapshot.Keybinds) do
-            local module = Registry:Get(moduleName)
-            local data = module and Keybinds[module]
-
-            if data and type(keyName) == "string" then
-                local keyCode = Enum.KeyCode[keyName]
-
-                if keyCode then
-                    data.Key = keyCode
-
-                    if data.Button then
-                        data.Button.Text = keyName
-                        data.Button.TextColor3 = TextColor
-                    end
-                end
-            end
-        end
-    end
+    saveLastSession()
 end
-
 
     if type(snapshot) ~= "table"
         or type(snapshot.Modules) ~= "table" then
