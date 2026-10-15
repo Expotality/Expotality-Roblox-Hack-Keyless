@@ -509,14 +509,6 @@ local function createToggle(parent, module, settingName, title)
     return row
 end
 
-    
-  button.MouseButton1Click:Connect(function()
-    local enabled = getSetting(module, settingName) ~= true
-
-    setSetting(module, settingName, enabled)
-    refresh(true)
-end)
-
         refresh()
     end)
 
