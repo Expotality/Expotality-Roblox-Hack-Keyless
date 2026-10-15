@@ -977,10 +977,16 @@ local function createKeybind(parent, module)
 
     corner(keyButton, 5)
 
-    Keybinds[module] = {
-        Button = keyButton,
-        Key = nil,
-    }
+local data = Keybinds[module] or {
+    Button = nil,
+    Key = nil,
+}
+
+data.Button = keyButton
+Keybinds[module] = data
+
+keyButton.Text = data.Key and data.Key.Name or "None"
+keyButton.TextColor3 = data.Key and TextColor or SubTextColor
 
     keyButton.MouseButton1Click:Connect(function()
 
