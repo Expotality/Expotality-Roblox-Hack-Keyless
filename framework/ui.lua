@@ -1070,13 +1070,13 @@ UserInputService.InputBegan:Connect(function(
 
         ListeningForKeybind = nil
 
-        if input.KeyCode
-            == Enum.KeyCode.Escape then
+        if input.KeyCode == Enum.KeyCode.Escape then
 
             data.Key = nil
             data.Button.Text = "None"
             data.Button.TextColor3 =
                 SubTextColor
+            saveLastSession()
 
             return
         end
