@@ -477,6 +477,7 @@ end
 ------------------------------------------------------------
 
 
+
 local function createToggle(parent, module, settingName, title)
     local row = create("Frame", {
         BackgroundColor3 = ElementBackground,
@@ -537,7 +538,10 @@ local function createToggle(parent, module, settingName, title)
         local knobColor = enabled and TextColor or SubTextColor
 
         if animated then
-            tween(button, {BackgroundColor3 = targetColor})
+            tween(button, {
+                BackgroundColor3 = targetColor,
+            })
+
             tween(knob, {
                 Position = targetPosition,
                 BackgroundColor3 = knobColor,
@@ -551,6 +555,7 @@ local function createToggle(parent, module, settingName, title)
 
     button.MouseButton1Click:Connect(function()
         local enabled = getSetting(module, settingName) ~= true
+
         setSetting(module, settingName, enabled)
         refresh(true)
     end)
@@ -560,13 +565,6 @@ local function createToggle(parent, module, settingName, title)
     return row
 end
 
-        refresh()
-    end)
-
-    refresh()
-
-    return row
-end
 
 ------------------------------------------------------------
 -- NUMBER
