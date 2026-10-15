@@ -242,7 +242,36 @@ saveLastSession = function()
     end
 end
 
+local function restoreKeybinds(savedKeybinds)
+    if type(savedKeybinds) ~= "table" then
+        return
+    end
 
+    for moduleName, keyName in pairs(savedKeybinds) do
+        local module = Registry:Get(moduleName)
+        local data = module and Keybinds[module]
+
+        if data and type(keyName) == "string" then
+            if keyName == "None" then
+                data.Key = nil
+            else
+                local keyCode = Enum.KeyCode[keyName]
+
+                if keyCode then
+                    data.Key = keyCode
+                end
+            end
+
+            if data.Button then
+                data.Button.Text =
+                    data.Key and data.Key.Name or "None"
+
+                data.Button.TextColor3 =
+                    data.Key and TextColor or SubTextColor
+            end
+        end
+    end
+end
 
 local function restoreLastSession()
     if not ConfigManager or not Registry then
