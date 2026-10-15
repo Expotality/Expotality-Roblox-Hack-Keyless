@@ -8,19 +8,43 @@ local Workspace = game:GetService("Workspace")
 
 local LocalPlayer = Players.LocalPlayer
 
+
 -- Settings
 Aimbot.Settings = {
     Enabled = false,
-    Smoothness = 0.35,
-    FOV = 45,
-    Range = 1000,
+
+    Smoothness = {
+        Type = "Slider",
+        Default = 8.5,
+        Min = 1,
+        Max = 10,
+        Step = 0.01,
+    },
+
+    FOV = {
+        Type = "Slider",
+        Default = 15,
+        Min = 1,
+        Max = 120,
+        Step = 1,
+    },
+
+    Range = {
+        Type = "Slider",
+        Default = 100,
+        Min = 10,
+        Max = 2000,
+        Step = 50,
+    },
+
     WallCheck = true,
-    TeamCheck = false,
+    TeamCheck = true,
     MouseAim = false,
     HoldMode = false,
     Key = Enum.KeyCode.E,
     MouseKey = nil,
 }
+
 
 -- State
 local holding = false
