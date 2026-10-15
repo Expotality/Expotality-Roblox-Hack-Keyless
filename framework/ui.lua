@@ -352,10 +352,6 @@ local function restoreLastSession()
     saveLastSession()
 end
 
-    if type(snapshot) ~= "table"
-        or type(snapshot.Modules) ~= "table" then
-        return
-    end
 
     IsRestoringSettings = true
 
