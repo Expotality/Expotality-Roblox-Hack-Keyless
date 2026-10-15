@@ -3292,6 +3292,13 @@ end
 function UI:Initialize(registry, configManager)
     Registry = registry
     ConfigManager = configManager
+
+    for _, module in pairs(Registry:GetAll()) do
+        Keybinds[module] = Keybinds[module] or {
+            Button = nil,
+            Key = nil,
+        }
+    end
     --------------------------------------------------------
     -- GUI
     --------------------------------------------------------
