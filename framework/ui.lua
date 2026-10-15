@@ -2947,10 +2947,9 @@ function UI:Toggle()
     )
 end
 
-function UI:Initialize(registry)
-
+function UI:Initialize(registry, configManager)
     Registry = registry
-
+    ConfigManager = configManager
     --------------------------------------------------------
     -- GUI
     --------------------------------------------------------
@@ -3032,23 +3031,28 @@ function UI:Initialize(registry)
     -- FIRST TAB
     --------------------------------------------------------
 
-    renderTab("Visuals")
-
-    --------------------------------------------------------
+        --------------------------------------------------------
     -- CONNECT CUSTOMIZATION
     --------------------------------------------------------
 
     local customizationModules =
-        Registry:GetByTab(
-            "Customization"
-        )
+        Registry:GetByTab("Customization")
 
-    if customizationModules
-        and customizationModules[1] then
-
-        customizationModules[1]._UI =
-            self
+    if customizationModules and customizationModules[1] then
+        customizationModules[1]._UI = self
     end
+
+    --------------------------------------------------------
+    -- RESTORE SETTINGS BEFORE DISPLAYING THE FIRST TAB
+    --------------------------------------------------------
+
+    restoreLastSession()
+
+    --------------------------------------------------------
+    -- FIRST TAB
+    --------------------------------------------------------
+
+    renderTab("Visuals")
 
     return self
 end
