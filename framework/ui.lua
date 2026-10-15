@@ -320,11 +320,7 @@ local function restoreLastSession()
                         local decodedValue = decodeValue(value)
 
                         if decodedValue ~= nil then
-                            setSetting(
-                                module,
-                                settingName,
-                                decodedValue
-                            )
+                            setSetting(module, settingName, decodedValue)
                         end
                     end
                 end
