@@ -8,10 +8,10 @@ local Workspace = game:GetService("Workspace")
 
 local LocalPlayer = Players.LocalPlayer
 
-
 -- Settings
 Aimbot.Settings = {
     Enabled = false,
+    ShowFOV = true,
 
     Smoothness = {
         Type = "Slider",
@@ -45,12 +45,37 @@ Aimbot.Settings = {
     MouseKey = nil,
 }
 
+-- Helper to get slider value
+local function getSetting(name)
+    local setting = Aimbot.Settings[name]
+    if type(setting) == "table" and setting.Default ~= nil then
+        return setting.Default
+    end
+    return setting
+end
 
 -- State
 local holding = false
 local bound = false
 local HAS_MOUSE = (type(mousemoverel) == "function")
+local HAS_DRAW = (type(Drawing) == "table")
 local EXCLUDE = Enum.RaycastFilterType.Exclude or Enum.RaycastFilterType.Blacklist
+
+-- FOV Circle
+local fovCircle
+if HAS_DRAW then
+    local ok, circle = pcall(function()
+        local c = Drawing.new("Circle")
+        c.Thickness = 1.5
+        c.NumSides = 72
+        c.Filled = false
+        c.Color = Color3.fromRGB(150, 115, 255)
+        c.Transparency = 0.85
+        c.Visible = false
+        return c
+    end)
+    if ok then fovCircle = circle end
+end
 
 -- Raycast params for wall check
 local rayParams = RaycastParams.new()
@@ -98,7 +123,7 @@ local function getTarget()
                 local hum = char:FindFirstChildOfClass("Humanoid")
                 if head and hum and hum.Health > 0 then
                     local dist = (head.Position - camPos).Magnitude
-                    if dist < bestDist and dist <= Aimbot.Settings.Range and inFOV(head.Position, cam, Aimbot.Settings.FOV) then
+                    if dist < bestDist and dist <= getSetting("Range") and inFOV(head.Position, cam, getSetting("FOV")) then
                         if not Aimbot.Settings.WallCheck or isVisible(head) then
                             best, bestDist = head, dist
                         end
@@ -125,7 +150,7 @@ local function aimWithMouse(targetPos)
 
     if delta.Magnitude < 0.5 then return end
 
-    local factor = 1 - math.clamp(Aimbot.Settings.Smoothness, 0, 0.98)
+    local factor = 1 - math.clamp(getSetting("Smoothness") / 10, 0, 0.98)
     mousemoverel(delta.X * factor, delta.Y * factor)
 end
 
@@ -133,10 +158,11 @@ local function aimWithCamera(targetPos, dt)
     local cam = Workspace.CurrentCamera
     if not cam then return end
 
-    local alpha = 1 - math.clamp(Aimbot.Settings.Smoothness, 0, 0.98)
+    local smoothness = getSetting("Smoothness") / 10
+    local alpha = 1 - math.clamp(smoothness, 0, 0.98)
     alpha = 1 - (1 - alpha) ^ (dt * 60)
 
-    if Aimbot.Settings.Smoothness <= 0.001 then
+    if smoothness <= 0.001 then
         cam.CFrame = CFrame.lookAt(cam.CFrame.Position, targetPos)
     else
         cam.CFrame = cam.CFrame:Lerp(CFrame.lookAt(cam.CFrame.Position, targetPos), alpha)
@@ -171,14 +197,29 @@ UserInputService.InputEnded:Connect(function(input)
     if Aimbot.Settings.HoldMode and isAimInput(input) then
         holding = false
     end
-end)
+end
 
 -- Main render loop
 local function renderStep(dt)
-    if not isActive() then return end
-
     local cam = Workspace.CurrentCamera
     if not cam then return end
+
+    local active = isActive()
+
+    -- Update FOV circle
+    if fovCircle then
+        if Aimbot.Settings.ShowFOV and active then
+            local vp = cam.ViewportSize
+            local radius = math.tan(math.rad(getSetting("FOV") * 0.5)) / math.tan(math.rad(cam.FieldOfView * 0.5)) * (vp.Y * 0.5)
+            fovCircle.Radius = radius
+            fovCircle.Position = Vector2.new(vp.X * 0.5, vp.Y * 0.5)
+            fovCircle.Visible = true
+        else
+            fovCircle.Visible = false
+        end
+    end
+
+    if not active then return end
 
     local target = getTarget()
     if not target then return end
@@ -201,18 +242,25 @@ function Aimbot:Disable()
     bound = false
     pcall(function() RunService:UnbindFromRenderStep("Aimbot") end)
     holding = false
+    if fovCircle then fovCircle.Visible = false end
 end
 
 function Aimbot:SetSetting(name, value)
     if self.Settings[name] == nil then
         return false
     end
-    self.Settings[name] = value
+    -- Handle slider settings
+    if type(self.Settings[name]) == "table" and self.Settings[name].Default ~= nil then
+        self.Settings[name].Default = value
+    else
+        self.Settings[name] = value
+    end
     return true
 end
 
 function Aimbot:Destroy()
     self:Disable()
+    if fovCircle then fovCircle:Remove() end
 end
 
 return Aimbot
