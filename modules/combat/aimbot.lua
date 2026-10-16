@@ -171,7 +171,7 @@ UserInputService.InputEnded:Connect(function(input)
     if Aimbot.Settings.HoldMode and isAimInput(input) then
         holding = false
     end
-end
+end)
 
 -- Main render loop
 local function renderStep(dt)
