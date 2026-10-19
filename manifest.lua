@@ -76,4 +76,10 @@ return {
     File = "modules/events/product_faker.lua",
     Tab = "Events"
     }
+
+    {
+    Name = "Reach",
+    File = "modules/combat/reach.lua",
+    Tab = "Combat"
+    }
 }
