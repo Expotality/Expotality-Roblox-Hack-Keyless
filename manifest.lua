@@ -75,7 +75,7 @@ return {
     Name = "Product Faker 2.0",
     File = "modules/events/product_faker.lua",
     Tab = "Events"
-    }
+    },
 
     {
     Name = "Reach",
