@@ -69,5 +69,11 @@ return {
     Name = "Anti-AFK",
     File = "modules/events/anti_afk.lua",
     Tab = "Events"
+    },
+
+    {
+    Name = "Product Faker 2.0",
+    File = "modules/events/product_faker.lua",
+    Tab = "Events"
     }
 }
