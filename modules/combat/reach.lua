@@ -4,7 +4,7 @@ local Module = {
     Settings = {
         Enabled = false,
         ReachDistance = 3.5,
-        ReachShape = "Sphere",
+        ReachShape = false,
         DamageMode = true,
         Visualizer = true,
         AutoClicker = false,
@@ -18,13 +18,6 @@ local Module = {
     _autoClickerThread = nil,
 }
 
-function Module:GetDropdownOptions(settingName)
-    if settingName == "ReachShape" then
-        return {"Sphere", "Line"}
-    end
-end
-
--- One-time initialization, runs only once per module lifetime
 function Module:initialize()
     if self._initialized then return end
     repeat task.wait() until game:IsLoaded()
@@ -33,7 +26,6 @@ function Module:initialize()
     self._initialized = true
 end
 
--- Validate numeric settings to prevent calculation errors
 function Module:validateSettings()
     if typeof(self.Settings.ClickSpeed) ~= "number" or self.Settings.ClickSpeed < 1 or self.Settings.ClickSpeed > 100 then
         self.Settings.ClickSpeed = 20
@@ -52,7 +44,6 @@ function Module:Enable()
     self._running = true
     self.Settings.Enabled = true
 
-    -- Create visualizer part
     self._visualizer = Instance.new("Part")
     self._visualizer.BrickColor = BrickColor.new("Bright red")
     self._visualizer.Transparency = 0.7
@@ -64,7 +55,6 @@ function Module:Enable()
     self._visualizer.TopSurface = Enum.SurfaceType.Smooth
     self._visualizer.Parent = nil
 
-    -- Start auto-clicker thread (only one instance)
     if self._autoClickerThread then
         self._autoClickerThread = nil
     end
@@ -80,7 +70,6 @@ function Module:Enable()
         end
     end)
 
-    -- Start reach detection
     local renderConn
     renderConn = game:GetService("RunService").RenderStepped:Connect(function()
         if not self._running or not self.Settings.Enabled then
@@ -106,7 +95,6 @@ function Module:Enable()
             return
         end
 
-        -- Manage visualizer
         if self.Settings.Visualizer then
             self._visualizer.Parent = workspace
         else
@@ -115,7 +103,7 @@ function Module:Enable()
 
         local reach = self.Settings.ReachDistance
 
-        if self.Settings.ReachShape == "Sphere" then
+        if not self.Settings.ReachShape then
             self._visualizer.Shape = Enum.PartType.Ball
             self._visualizer.Size = Vector3.new(reach, reach, reach)
             self._visualizer.CFrame = handle.CFrame
@@ -131,7 +119,7 @@ function Module:Enable()
                     end
                 end
             end
-        elseif self.Settings.ReachShape == "Line" then
+        else
             local origin = (handle.CFrame * CFrame.new(0, 0, -2)).p
             local ray = Ray.new(origin, handle.CFrame.lookVector * -reach)
             local p, pos = workspace:FindPartOnRayWithWhitelist(ray, self:getWhiteList())
@@ -169,8 +157,6 @@ function Module:Disable()
     end
 end
 
--- Note: firetouchinterest is executor-specific, not standard Roblox API.
--- Client-side touch simulation does not guarantee server-side damage registration.
 function Module:onHit(hit, handle)
     if not hit or not hit.Parent then return end
 
