@@ -74,7 +74,7 @@ return {
     {
         Name = "Tool Giver",
         File = "modules/utility/tool_giver.lua",
-        Tab = "Utlity"
+        Tab = "Utility"
     },
 
     {
