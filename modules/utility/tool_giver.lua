@@ -1,4 +1,4 @@
-local ToolGiver = {}
+local Module = {}
 
 local Players =
     game:GetService("Players")
@@ -7,17 +7,17 @@ local LocalPlayer =
     Players.LocalPlayer
 
 
-ToolGiver.Name =
+Module.Name =
     "Tool Giver"
 
-ToolGiver.Tab =
+Module.Tab =
     "Utilities"
 
-ToolGiver.Description =
+Module.Description =
     "Gives you tools from the game world."
 
 
-ToolGiver.Settings = {
+Module.Settings = {
 
     Enabled = false,
 
