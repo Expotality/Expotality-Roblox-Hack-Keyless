@@ -79,7 +79,7 @@ end
 -- ENABLE
 --------------------------------------------------
 
-function ToolGiver:Enable()
+function Module:Enable()
 
     self.Settings.Enabled =
         true
@@ -91,7 +91,7 @@ end
 -- DISABLE
 --------------------------------------------------
 
-function ToolGiver:Disable()
+function Module:Disable()
 
     self.Settings.Enabled =
         false
@@ -103,14 +103,14 @@ end
 -- PUBLIC METHODS
 --------------------------------------------------
 
-function ToolGiver:GetTools()
+function Module:GetTools()
 
     return findTools()
 
 end
 
 
-function ToolGiver:GiveTool(tool)
+function Module:GiveTool(tool)
 
     if self.Settings.Enabled and tool and tool:IsA("Tool") then
 
@@ -130,7 +130,7 @@ end
 -- SETTINGS
 --------------------------------------------------
 
-function ToolGiver:SetSetting(
+function Module:SetSetting(
     Setting,
     Value
 )
@@ -173,11 +173,11 @@ end
 -- DESTROY
 --------------------------------------------------
 
-function ToolGiver:Destroy()
+function Module:Destroy()
 
     self:Disable()
 
 end
 
 
-return ToolGiver
+return Module
