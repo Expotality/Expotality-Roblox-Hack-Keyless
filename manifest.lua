@@ -30,20 +30,14 @@ return {
     },
 
     {
-        Name = "Events",
-        File = "modules/events/debugger.lua",
-        Tab = "Events",
-    },
-
-    {
         Name = "Customization",
         File = "modules/customization/customization.lua",
         Tab = "Customization",
     },
 
     {
-        Name = "Utilities",
-        File = "modules/utilities/example.lua",
+        Name = "Saving",
+        File = "modules/saving/example.lua",
         Tab = "Utilities",
     },
 
