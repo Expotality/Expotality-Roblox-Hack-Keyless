@@ -38,7 +38,7 @@ return {
     {
         Name = "Saving",
         File = "modules/saving/example.lua",
-        Tab = "Utilities",
+        Tab = "Saving",
     },
 
     {
