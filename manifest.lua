@@ -36,9 +36,9 @@ return {
     },
 
     {
-        Name = "Saving",
-        File = "modules/saving/example.lua",
-        Tab = "Saving",
+        Name = "Presets",
+        File = "modules/presets/example.lua",
+        Tab = "Presets",
     },
 
     {
