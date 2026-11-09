@@ -1,12 +1,5 @@
 local Module = {}
 
-local Players =
-    game:GetService("Players")
-
-local LocalPlayer =
-    Players.LocalPlayer
-
-
 Module.Name =
     "Tool Giver"
 
@@ -22,6 +15,13 @@ Module.Settings = {
     Enabled = false,
 
 }
+
+
+local Players =
+    game:GetService("Players")
+
+local LocalPlayer =
+    Players.LocalPlayer
 
 
 local Backpack =
