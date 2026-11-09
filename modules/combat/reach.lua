@@ -1,6 +1,8 @@
 local Module = {
     Name = "Reach",
 
+    Description = "Allows for further hitting to a certain extent.",
+
     Settings = {
         Enabled = false,
         ReachDistance = 3.5,
