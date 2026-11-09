@@ -14,7 +14,7 @@ Registry.ByTab = {
     Events = {},
     Customization = {},
     Utility = {},
-    Saving = {},
+    Presets = {},
 }
 
 ------------------------------------------------------------
