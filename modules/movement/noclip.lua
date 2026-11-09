@@ -1,3 +1,4 @@
+
 local Module = {}
 
 Module.Name = "NoClip"
@@ -13,33 +14,99 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 
 local LocalPlayer = Players.LocalPlayer
-local Connection = nil
 
-local function setCollision(enabled)
-    local Character = LocalPlayer.Character
-    if not Character then
+local Connection = nil
+local CharacterConnection = nil
+local DescendantConnection = nil
+
+local OriginalCollision = {}
+local CurrentCharacter = nil
+
+-- ============================================
+-- COLLISION MANAGEMENT
+-- ============================================
+
+local function savePart(Object)
+    if not Object:IsA("BasePart") then
         return
     end
 
-    for _, Object in ipairs(Character:GetDescendants()) do
-        if Object:IsA("BasePart") then
-            Object.CanCollide = enabled
-        end
+    if OriginalCollision[Object] ~= nil then
+        return
     end
+
+    OriginalCollision[Object] = Object.CanCollide
 end
 
 local function applyNoClip()
     local Character = LocalPlayer.Character
+
     if not Character then
         return
     end
 
+    if CurrentCharacter ~= Character then
+        OriginalCollision = {}
+        CurrentCharacter = Character
+    end
+
     for _, Object in ipairs(Character:GetDescendants()) do
         if Object:IsA("BasePart") then
+            savePart(Object)
             Object.CanCollide = false
         end
     end
 end
+
+local function restoreCollision()
+    for Object, OriginalValue in pairs(OriginalCollision) do
+        if Object and Object.Parent then
+            pcall(function()
+                Object.CanCollide = OriginalValue
+            end)
+        end
+    end
+
+    table.clear(OriginalCollision)
+end
+
+-- ============================================
+-- CHARACTER MANAGEMENT
+-- ============================================
+
+local function disconnectCharacter()
+    if DescendantConnection then
+        DescendantConnection:Disconnect()
+        DescendantConnection = nil
+    end
+end
+
+local function setupCharacter(Character)
+    disconnectCharacter()
+    restoreCollision()
+
+    CurrentCharacter = Character
+
+    if not Character then
+        return
+    end
+
+    DescendantConnection =
+        Character.DescendantAdded:Connect(function(Object)
+            if not Module.Settings.Enabled then
+                return
+            end
+
+            if Object:IsA("BasePart") then
+                savePart(Object)
+                Object.CanCollide = false
+            end
+        end)
+end
+
+-- ============================================
+-- MODULE
+-- ============================================
 
 function Module:Enable()
     if Connection then
@@ -47,6 +114,10 @@ function Module:Enable()
     end
 
     self.Settings.Enabled = true
+
+    if LocalPlayer.Character then
+        setupCharacter(LocalPlayer.Character)
+    end
 
     Connection = RunService.Stepped:Connect(function()
         if self.Settings.Enabled then
@@ -63,7 +134,10 @@ function Module:Disable()
         Connection = nil
     end
 
-    setCollision(true)
+    disconnectCharacter()
+    restoreCollision()
+
+    CurrentCharacter = nil
 end
 
 function Module:SetSetting(Name, Value)
@@ -94,6 +168,21 @@ end
 
 function Module:Destroy()
     self:Disable()
+
+    if CharacterConnection then
+        CharacterConnection:Disconnect()
+        CharacterConnection = nil
+    end
 end
+
+-- ============================================
+-- INITIALIZATION
+-- ============================================
+
+CharacterConnection = LocalPlayer.CharacterAdded:Connect(function(Character)
+    if Module.Settings.Enabled then
+        setupCharacter(Character)
+    end
+end)
 
 return Module
