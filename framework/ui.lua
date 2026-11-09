@@ -39,7 +39,7 @@ local TAB_ORDER = {
     "Events",
     "Customization",
     "Utility",
-    "Saving"
+    "Presets"
 }
 
 ------------------------------------------------------------
@@ -2508,7 +2508,7 @@ local function renderTab(tabName)
     -- PRESETS PANEL (UTILITIES)
     --------------------------------------------------------
 
-    if tabName == "Utilities" then
+    if tabName == "Presets" then
         local panel = create("Frame", {
             BackgroundColor3 = SidebarBackground,
             BorderSizePixel = 0,
@@ -2734,7 +2734,7 @@ local function renderTab(tabName)
 
                     saveLastSession()
                     status.Text = "Loaded: " .. presetName
-                    renderTab("Utilities")
+                    renderTab("Presets")
                 end)
 
                 local deleteButton = create("TextButton", {
