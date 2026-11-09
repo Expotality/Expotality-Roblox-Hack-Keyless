@@ -1,11 +1,18 @@
+
 local Module = {}
 
 Module.Name = "ESP"
 Module.Tab = "Visuals"
-Module.Description = "Simple player ESP."
+Module.Description = "Player and NPC ESP."
 
 Module.Settings = {
     Enabled = false,
+
+    -- Player filtering
+    EnemyOnly = false,
+
+    -- NPC ESP
+    NPCESP = false,
 
     -- Box
     BoxESP = false,
@@ -18,60 +25,84 @@ Module.Settings = {
     ChamsOutlineColor = Color3.fromRGB(255, 255, 255),
     ChamsTransparency = 0.5,
 
-    -- Username
+    -- Username / Model name
     Username = false,
     UsernameColor = Color3.fromRGB(255, 255, 255),
 
     -- Distance
     StudsAway = true,
     DistanceColor = Color3.fromRGB(200, 200, 200),
-
-    -- Team filtering
-    EnemyOnly = false,
-
-    -- NPC detection
-    NPCESP = false,
-    NPCDetection = {
-    Humanoid = true,
-    AnimationController = true,
-    CollectionServiceTags = true,
-    NPCNames = true,
-    NPCFolders = true,
-    },
 }
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
 
 local LocalPlayer = Players.LocalPlayer
 
 local ESPObjects = {}
-local CharacterConnections = {}
+local NPCModels = {}
 
-local function getCharacter(player)
-    return player.Character
-end
+local Connections = {}
 
-local function getRoot(player)
-    local character = getCharacter(player)
+-- ============================================
+-- TARGET DETECTION
+-- ============================================
 
-    if not character then
+local function getRoot(model)
+    if not model then
         return nil
     end
 
-    return character:FindFirstChild("HumanoidRootPart")
-        or character:FindFirstChild("Torso")
+    return model:FindFirstChild("HumanoidRootPart")
+        or model:FindFirstChild("Torso")
+        or model:FindFirstChild("UpperTorso")
+        or model.PrimaryPart
+        or model:FindFirstChildWhichIsA("BasePart", true)
 end
 
-local function getHumanoid(player)
-    local character = getCharacter(player)
-
-    if not character then
+local function getHumanoid(model)
+    if not model then
         return nil
     end
 
-    return character:FindFirstChildOfClass("Humanoid")
+    return model:FindFirstChildOfClass("Humanoid")
 end
+
+local function isNPC(model)
+    if not model or not model:IsA("Model") then
+        return false
+    end
+
+    -- Never classify actual player characters as NPCs.
+    if Players:GetPlayerFromCharacter(model) then
+        return false
+    end
+
+    -- Only two detection methods.
+    local humanoid = model:FindFirstChildOfClass("Humanoid")
+    local animationController =
+        model:FindFirstChildOfClass("AnimationController")
+
+    return humanoid ~= nil or animationController ~= nil
+end
+
+local function isEnemy(player)
+    if not Module.Settings.EnemyOnly then
+        return true
+    end
+
+    -- Fall back to normal ESP if teams cannot be determined.
+    if not LocalPlayer.Team or not player.Team then
+        return true
+    end
+
+    return player.Team ~= LocalPlayer.Team
+end
+
+-- ============================================
+-- DRAWING CREATION
+-- ============================================
 
 local function createLine()
     local line = Drawing.new("Line")
@@ -96,17 +127,12 @@ local function createText()
 end
 
 local function createBox()
-    local box = {
+    return {
         Top = createLine(),
         Bottom = createLine(),
         Left = createLine(),
         Right = createLine(),
-
-        -- Corner box uses the same four lines.
-        -- Full box and corner box are handled by visibility/coordinates.
     }
-
-    return box
 end
 
 local function hideDrawing(object)
@@ -115,17 +141,36 @@ local function hideDrawing(object)
     end
 end
 
-local function hideESP(player)
-    local data = ESPObjects[player]
+-- ============================================
+-- ESP OBJECT MANAGEMENT
+-- ============================================
+
+local function createESP(key)
+    if ESPObjects[key] then
+        return ESPObjects[key]
+    end
+
+    local data = {
+        Box = createBox(),
+        Username = createText(),
+        Distance = createText(),
+        Highlight = nil,
+    }
+
+    ESPObjects[key] = data
+
+    return data
+end
+
+local function hideESP(key)
+    local data = ESPObjects[key]
 
     if not data then
         return
     end
 
-    if data.Box then
-        for _, line in pairs(data.Box) do
-            hideDrawing(line)
-        end
+    for _, line in pairs(data.Box) do
+        hideDrawing(line)
     end
 
     hideDrawing(data.Username)
@@ -136,32 +181,23 @@ local function hideESP(player)
     end
 end
 
-local function removeESP(player)
-    local data = ESPObjects[player]
+local function removeESP(key)
+    local data = ESPObjects[key]
 
     if not data then
         return
     end
 
-    if data.Box then
-        for _, line in pairs(data.Box) do
-            pcall(function()
-                line:Remove()
-            end)
-        end
-    end
-
-    if data.Username then
+    for _, line in pairs(data.Box) do
         pcall(function()
-            data.Username:Remove()
+            line:Remove()
         end)
     end
 
-    if data.Distance then
-        pcall(function()
-            data.Distance:Remove()
-        end)
-    end
+    pcall(function()
+        data.Username:Remove()
+        data.Distance:Remove()
+    end)
 
     if data.Highlight then
         pcall(function()
@@ -169,48 +205,15 @@ local function removeESP(player)
         end)
     end
 
-    ESPObjects[player] = nil
+    ESPObjects[key] = nil
 end
 
-local function createESP(player)
-    if player == LocalPlayer then
-        return
-    end
+-- ============================================
+-- CHAMS
+-- ============================================
 
-    if ESPObjects[player] then
-        return ESPObjects[player]
-    end
-
-    local data = {
-        Box = createBox(),
-        Username = createText(),
-        Distance = createText(),
-        Highlight = nil,
-    }
-
-    ESPObjects[player] = data
-
-    local character = player.Character
-
-    if character then
-        local highlight = Instance.new("Highlight")
-        highlight.Name = "ESP_Chams"
-        highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-        highlight.Enabled = false
-        highlight.FillTransparency = Module.Settings.ChamsTransparency
-        highlight.OutlineTransparency = 0
-        highlight.FillColor = Module.Settings.ChamsFillColor
-        highlight.OutlineColor = Module.Settings.ChamsOutlineColor
-        highlight.Parent = character
-
-        data.Highlight = highlight
-    end
-
-    return data
-end
-
-local function updateHighlight(player, data, character)
-    if not data.Highlight or data.Highlight.Parent ~= character then
+local function updateHighlight(key, data, model)
+    if not data.Highlight or data.Highlight.Parent ~= model then
         if data.Highlight then
             pcall(function()
                 data.Highlight:Destroy()
@@ -218,20 +221,23 @@ local function updateHighlight(player, data, character)
         end
 
         local highlight = Instance.new("Highlight")
+
         highlight.Name = "ESP_Chams"
         highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
         highlight.FillTransparency = Module.Settings.ChamsTransparency
         highlight.OutlineTransparency = 0
         highlight.FillColor = Module.Settings.ChamsFillColor
         highlight.OutlineColor = Module.Settings.ChamsOutlineColor
-        highlight.Parent = character
+        highlight.Enabled = false
+        highlight.Parent = model
 
         data.Highlight = highlight
     end
 
     local highlight = data.Highlight
 
-    highlight.Enabled = Module.Settings.Enabled
+    highlight.Enabled =
+        Module.Settings.Enabled
         and Module.Settings.ChamsEnabled
 
     highlight.FillColor = Module.Settings.ChamsFillColor
@@ -240,19 +246,20 @@ local function updateHighlight(player, data, character)
     highlight.OutlineTransparency = 0
 end
 
+-- ============================================
+-- BOX DRAWING
+-- ============================================
+
 local function drawCornerBox(box, x, y, width, height)
     local cornerX = width * 0.25
     local cornerY = height * 0.25
 
-    -- Top left
     box.Top.From = Vector2.new(x, y)
     box.Top.To = Vector2.new(x + cornerX, y)
 
     box.Left.From = Vector2.new(x, y)
     box.Left.To = Vector2.new(x, y + cornerY)
 
-    -- Top right
-    -- Stored using Bottom/Right temporarily for corner segments
     box.Bottom.From = Vector2.new(x + width - cornerX, y)
     box.Bottom.To = Vector2.new(x + width, y)
 
@@ -280,40 +287,36 @@ local function setBoxVisible(box, visible)
     end
 end
 
-local function updateBox(player, data, root)
+local function updateBox(data, model)
     if not Module.Settings.BoxESP then
         setBoxVisible(data.Box, false)
         return
     end
 
-    local camera = workspace.CurrentCamera
+    local camera = Workspace.CurrentCamera
 
     if not camera then
         setBoxVisible(data.Box, false)
         return
     end
 
-    local character = player.Character
+    local success, cf, size = pcall(function()
+        return model:GetBoundingBox()
+    end)
 
-    if not character then
+    if not success then
         setBoxVisible(data.Box, false)
         return
     end
-
-    local humanoid = getHumanoid(player)
-
-    if not humanoid or humanoid.Health <= 0 then
-        setBoxVisible(data.Box, false)
-        return
-    end
-
-    local cf, size = character:GetBoundingBox()
 
     local topWorld = cf.Position + Vector3.new(0, size.Y / 2, 0)
     local bottomWorld = cf.Position - Vector3.new(0, size.Y / 2, 0)
 
-    local topScreen, topVisible = camera:WorldToViewportPoint(topWorld)
-    local bottomScreen, bottomVisible = camera:WorldToViewportPoint(bottomWorld)
+    local topScreen, topVisible =
+        camera:WorldToViewportPoint(topWorld)
+
+    local bottomScreen, bottomVisible =
+        camera:WorldToViewportPoint(bottomWorld)
 
     if not topVisible and not bottomVisible then
         setBoxVisible(data.Box, false)
@@ -346,8 +349,12 @@ local function updateBox(player, data, root)
     end
 end
 
-local function updateText(player, data, root)
-    local camera = workspace.CurrentCamera
+-- ============================================
+-- TEXT DRAWING
+-- ============================================
+
+local function updateText(data, model, root, displayName)
+    local camera = Workspace.CurrentCamera
 
     if not camera then
         hideDrawing(data.Username)
@@ -355,9 +362,10 @@ local function updateText(player, data, root)
         return
     end
 
-    local screenPosition, visible = camera:WorldToViewportPoint(
-        root.Position + Vector3.new(0, 3.5, 0)
-    )
+    local screenPosition, visible =
+        camera:WorldToViewportPoint(
+            root.Position + Vector3.new(0, 3.5, 0)
+        )
 
     if not visible then
         hideDrawing(data.Username)
@@ -365,14 +373,16 @@ local function updateText(player, data, root)
         return
     end
 
-    local distance = (camera.CFrame.Position - root.Position).Magnitude
+    local distance =
+        (camera.CFrame.Position - root.Position).Magnitude
 
     if Module.Settings.Username then
-        data.Username.Text = player.DisplayName
+        data.Username.Text = displayName
         data.Username.Position = Vector2.new(
             screenPosition.X,
             screenPosition.Y
         )
+
         data.Username.Color = Module.Settings.UsernameColor
         data.Username.Visible = true
     else
@@ -397,101 +407,182 @@ local function updateText(player, data, root)
     end
 end
 
+-- ============================================
+-- GENERAL TARGET UPDATE
+-- ============================================
+
+local function updateTarget(key, model, displayName)
+    if not Module.Settings.Enabled then
+        hideESP(key)
+        return
+    end
+
+    if not model or model.Parent == nil then
+        hideESP(key)
+        return
+    end
+
+    local root = getRoot(model)
+
+    if not root then
+        hideESP(key)
+        return
+    end
+
+    local humanoid = getHumanoid(model)
+
+    if humanoid and humanoid.Health <= 0 then
+        hideESP(key)
+        return
+    end
+
+    local data = createESP(key)
+
+    updateHighlight(key, data, model)
+    updateBox(data, model)
+    updateText(data, model, root, displayName)
+end
+
+-- ============================================
+-- PLAYER ESP
+-- ============================================
+
 local function updatePlayer(player)
     if player == LocalPlayer then
         return
     end
 
-    local data = createESP(player)
-
-    if not Module.Settings.Enabled then
+    if not isEnemy(player) then
         hideESP(player)
         return
     end
 
     local character = player.Character
-    local root = getRoot(player)
-    local humanoid = getHumanoid(player)
 
-    if not character or not root or not humanoid or humanoid.Health <= 0 then
+    if not character then
         hideESP(player)
         return
     end
 
-    if character.Parent == nil then
-        hideESP(player)
-        return
-    end
-
-    updateHighlight(player, data, character)
-    updateBox(player, data, root)
-    updateText(player, data, root)
+    updateTarget(
+        player,
+        character,
+        player.DisplayName
+    )
 end
+
+-- ============================================
+-- NPC ESP
+-- ============================================
+
+local function registerNPCModel(model)
+    if model and model:IsA("Model") then
+        NPCModels[model] = true
+    end
+end
+
+local function scanNPCs()
+    for _, object in ipairs(Workspace:GetDescendants()) do
+        if object:IsA("Model") then
+            registerNPCModel(object)
+        end
+    end
+end
+
+local function updateNPCs()
+    for model in pairs(NPCModels) do
+        if not model.Parent or not model:IsDescendantOf(Workspace) then
+            removeESP(model)
+            NPCModels[model] = nil
+
+        elseif not Module.Settings.NPCESP then
+            hideESP(model)
+
+        elseif isNPC(model) then
+            updateTarget(
+                model,
+                model,
+                model.Name
+            )
+
+        else
+            hideESP(model)
+        end
+    end
+end
+
+-- Detect newly added NPC components.
+Connections.DescendantAdded =
+    Workspace.DescendantAdded:Connect(function(object)
+
+        if object:IsA("Model") then
+            registerNPCModel(object)
+
+        elseif object:IsA("Humanoid")
+            or object:IsA("AnimationController") then
+
+            local parent = object.Parent
+
+            if parent and parent:IsA("Model") then
+                registerNPCModel(parent)
+            end
+        end
+    end)
+
+-- ============================================
+-- MAIN UPDATE
+-- ============================================
 
 local function updateAll()
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer then
-            updatePlayer(player)
+    if not Module.Settings.Enabled then
+        for key in pairs(ESPObjects) do
+            hideESP(key)
         end
-    end
-end
 
-local function setupPlayer(player)
-    if player == LocalPlayer then
         return
     end
 
-    createESP(player)
-
-    if CharacterConnections[player] then
-        CharacterConnections[player]:Disconnect()
+    for _, player in ipairs(Players:GetPlayers()) do
+        updatePlayer(player)
     end
 
-    CharacterConnections[player] = player.CharacterAdded:Connect(function(character)
-        task.wait(0.1)
-
-        local data = ESPObjects[player]
-
-        if not data then
-            return
-        end
-
-        if data.Highlight then
-            pcall(function()
-                data.Highlight:Destroy()
-            end)
-        end
-
-        local highlight = Instance.new("Highlight")
-        highlight.Name = "ESP_Chams"
-        highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-        highlight.Enabled = false
-        highlight.FillTransparency = Module.Settings.ChamsTransparency
-        highlight.OutlineTransparency = 0
-        highlight.FillColor = Module.Settings.ChamsFillColor
-        highlight.OutlineColor = Module.Settings.ChamsOutlineColor
-        highlight.Parent = character
-
-        data.Highlight = highlight
-    end)
+    updateNPCs()
 end
 
-Players.PlayerAdded:Connect(setupPlayer)
+-- ============================================
+-- PLAYER CONNECTIONS
+-- ============================================
 
-Players.PlayerRemoving:Connect(function(player)
-    if CharacterConnections[player] then
-        CharacterConnections[player]:Disconnect()
-        CharacterConnections[player] = nil
-    end
+Connections.PlayerAdded =
+    Players.PlayerAdded:Connect(function(player)
+        if player ~= LocalPlayer then
+            createESP(player)
+        end
+    end)
 
-    removeESP(player)
-end)
+Connections.PlayerRemoving =
+    Players.PlayerRemoving:Connect(function(player)
+        removeESP(player)
+    end)
+
+-- ============================================
+-- INITIALIZATION
+-- ============================================
 
 for _, player in ipairs(Players:GetPlayers()) do
-    setupPlayer(player)
+    if player ~= LocalPlayer then
+        createESP(player)
+    end
 end
 
-local UpdateConnection = RunService.RenderStepped:Connect(updateAll)
+scanNPCs()
+
+local UpdateConnection =
+    RunService.RenderStepped:Connect(updateAll)
+
+-- ============================================
+-- MODULE API
+-- ============================================
 
 function Module:Enable()
     self.Settings.Enabled = true
@@ -500,8 +591,8 @@ end
 function Module:Disable()
     self.Settings.Enabled = false
 
-    for player in pairs(ESPObjects) do
-        hideESP(player)
+    for key in pairs(ESPObjects) do
+        hideESP(key)
     end
 end
 
@@ -539,14 +630,19 @@ function Module:Destroy()
         UpdateConnection = nil
     end
 
-    for player, connection in pairs(CharacterConnections) do
-        connection:Disconnect()
-        CharacterConnections[player] = nil
+    for _, connection in pairs(Connections) do
+        if connection then
+            connection:Disconnect()
+        end
     end
 
-    for player in pairs(ESPObjects) do
-        removeESP(player)
+    table.clear(Connections)
+
+    for key in pairs(ESPObjects) do
+        removeESP(key)
     end
+
+    table.clear(NPCModels)
 end
 
 return Module
