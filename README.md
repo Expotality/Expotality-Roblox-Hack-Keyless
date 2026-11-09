@@ -16,7 +16,7 @@ If you are looking for an executor, I recommend downloading **Exloader** because
 2. Paste the following loadstring code into your executor's script area:
 
 ```lua
-loadstring(game:HttpGet("[https://raw.githubusercontent.com/Expotality/Expotality-Roblox-Hack-Keyless/main/loader.lua](https://raw.githubusercontent.com/Expotality/Expotality-Roblox-Hack-Keyless/main/loader.lua)"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Expotality/Expotality-Roblox-Hack-Keyless/main/loader.lua"))()
 ```
 
 3. Click **Execute** and you are good to go! There are plenty of options built in.
