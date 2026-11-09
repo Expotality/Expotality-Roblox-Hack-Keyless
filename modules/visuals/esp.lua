@@ -25,6 +25,19 @@ Module.Settings = {
     -- Distance
     StudsAway = true,
     DistanceColor = Color3.fromRGB(200, 200, 200),
+
+    -- Team filtering
+    EnemyOnly = false,
+
+    -- NPC detection
+    NPCESP = false,
+    NPCDetection = {
+    Humanoid = true,
+    AnimationController = true,
+    CollectionServiceTags = true,
+    NPCNames = true,
+    NPCFolders = true,
+    },
 }
 
 local Players = game:GetService("Players")
