@@ -38,8 +38,8 @@ local TAB_ORDER = {
     "Combat",
     "Events",
     "Customization",
-    "Utilities",
-    "Utility"
+    "Utility",
+    "Saving"
 }
 
 ------------------------------------------------------------
