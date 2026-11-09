@@ -13,7 +13,8 @@ Registry.ByTab = {
     Combat = {},
     Events = {},
     Customization = {},
-    Utilities = {},
+    Utility = {},
+    Saving = {},
 }
 
 ------------------------------------------------------------
