@@ -16,16 +16,19 @@ Module.Settings = {
     SearchTools = "",
     RefreshInterval = 2,
     SelectedTool = "",
-
-    {
-    Type = "Action",
-    Text = "Get",
-    OnClick = function()
-       GiveSelectedTool()
-    end
-    }
 }
 
+return {
+    Name = "Get Tool",
+
+    Type = "Action",
+
+    Description = "Gives you the selected tool.",
+
+    Open = function(self)
+        Module:GiveSelectedTool()
+    end
+}
 
 local Players =
     game:GetService("Players")
