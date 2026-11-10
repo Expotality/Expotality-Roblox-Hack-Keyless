@@ -36,9 +36,10 @@ local TAB_ORDER = {
     "Visuals",
     "Movement",
     "Combat",
+    "Trolls"
     "Events",
-    "Customization",
     "Utility",
+    "Customization",
     "Presets"
 }
 
