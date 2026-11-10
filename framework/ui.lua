@@ -740,11 +740,13 @@ local function createDropdown(
 
     local closedHeight = 42
     local optionHeight = 32
+    local maxVisibleOptions = 3
+    local visibleOptionCount = math.min(#options, maxVisibleOptions)
 
     local openHeight =
         closedHeight
         + 6
-        + (#options * optionHeight)
+        + (visibleOptionCount * optionHeight)
 
     local container = create("Frame", {
         BackgroundTransparency = 1,
@@ -825,7 +827,7 @@ local function createDropdown(
 
     corner(button, 5)
 
-    local dropdown = create("Frame", {
+    local dropdown = create("ScrollingFrame", {
 
         BackgroundColor3 =
             Color3.fromRGB(18, 19, 24),
@@ -838,8 +840,23 @@ local function createDropdown(
                 1,
                 0,
                 0,
+                visibleOptionCount * optionHeight
+            ),
+
+        CanvasSize =
+            UDim2.new(
+                0,
+                0,
+                0,
                 #options * optionHeight
             ),
+
+        ScrollBarThickness = 4,
+        ScrollBarImageColor3 = Accent,
+        ScrollBarImageTransparency = 0.15,
+        ScrollingDirection = Enum.ScrollingDirection.Y,
+        Active = true,
+        ClipsDescendants = true,
 
         Position =
             UDim2.fromOffset(0, 48),
