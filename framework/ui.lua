@@ -2852,6 +2852,67 @@ end
 -- THEME
 ------------------------------------------------------------
 
+function UI:SetAccentColor(color)
+    if typeof(color) ~= "Color3" then
+        return
+    end
+
+    local previousAccent = Accent
+    Accent = color
+
+    if not ScreenGui then
+        return
+    end
+
+    for _, object in ipairs(ScreenGui:GetDescendants()) do
+        if object:IsA("GuiObject")
+            and object.BackgroundColor3 == previousAccent then
+            object.BackgroundColor3 = color
+        end
+
+        if object:IsA("TextLabel")
+            or object:IsA("TextButton")
+            or object:IsA("TextBox") then
+            if object.TextColor3 == previousAccent then
+                object.TextColor3 = color
+            end
+        end
+
+        if object:IsA("ScrollingFrame")
+            and object.ScrollBarImageColor3 == previousAccent then
+            object.ScrollBarImageColor3 = color
+        end
+
+        if object:IsA("UIStroke")
+            and object.Color == previousAccent then
+            object.Color = color
+        end
+
+        if object:IsA("UIGradient") then
+            local updated = {}
+            local changed = false
+
+            for _, keypoint in ipairs(object.Color.Keypoints) do
+                local keypointColor = keypoint.Value
+
+                if keypointColor == previousAccent then
+                    keypointColor = color
+                    changed = true
+                end
+
+                updated[#updated + 1] = ColorSequenceKeypoint.new(
+                    keypoint.Time,
+                    keypointColor
+                )
+            end
+
+            if changed then
+                object.Color = ColorSequence.new(updated)
+            end
+        end
+    end
+end
+
 function UI:ApplyTheme(theme)
 
     if not theme then
