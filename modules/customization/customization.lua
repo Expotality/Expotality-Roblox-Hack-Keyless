@@ -40,6 +40,7 @@ Module.DropdownOptions = {
         "Pink",
         "Crimson",
         "Monochrome",
+        "RGB",
     },
 }
 
@@ -102,6 +103,17 @@ Module.Themes = {
         SubTextColor = Color3.fromRGB(145, 145, 145),
         BorderColor = Color3.fromRGB(45, 45, 45),
     },
+
+    RGB = {
+        Accent = Color3.fromHSV(0, 0.46, 0.94),
+        Background = Color3.fromRGB(15, 16, 20),
+        SidebarBackground = Color3.fromRGB(19, 20, 25),
+        ElementBackground = Color3.fromRGB(24, 25, 31),
+        ElementHover = Color3.fromRGB(31, 33, 41),
+        TextColor = Color3.fromRGB(235, 235, 240),
+        SubTextColor = Color3.fromRGB(145, 148, 158),
+        BorderColor = Color3.fromRGB(43, 44, 52),
+    },
 }
 
 ------------------------------------------------------------
@@ -113,6 +125,7 @@ Module._hudGui = nil
 Module._hudLabels = {}
 Module._hudConnections = {}
 Module._dragStates = {}
+Module._rgbConnection = nil
 
 Module._fpsFrames = 0
 Module._fpsElapsed = 0
@@ -205,10 +218,27 @@ function Module:ApplyTheme()
         return
     end
 
+    if self._rgbConnection then
+        self._rgbConnection:Disconnect()
+        self._rgbConnection = nil
+    end
+
     self.CurrentTheme = theme
 
     if self._UI then
         self._UI:ApplyTheme(theme)
+    end
+
+    if self.Settings.Theme == "RGB" and self._UI then
+        local hue = 0
+
+        self._rgbConnection = RunService.RenderStepped:Connect(function(dt)
+            hue = (hue + dt * 0.075) % 1
+
+            self._UI:SetAccentColor(
+                Color3.fromHSV(hue, 0.46, 0.94)
+            )
+        end)
     end
 end
 
