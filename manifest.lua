@@ -78,6 +78,12 @@ return {
     },
 
     {
+        Name = "Sit On Player",
+        File = "modules/trolls/sit_on_player.lua",
+        Tab = "Trolls"
+    },
+
+    {
         Name = "Reach",
         File = "modules/combat/reach.lua",
         Tab = "Combat"
