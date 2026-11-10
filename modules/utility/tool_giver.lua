@@ -16,6 +16,14 @@ Module.Settings = {
     SearchTools = "",
     RefreshInterval = 2,
     SelectedTool = "",
+
+    {
+    Type = "Action",
+    Text = "Get",
+    OnClick = function()
+       GiveSelectedTool()
+    end
+    }
 }
 
 
