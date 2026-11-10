@@ -11,9 +11,10 @@ Registry.ByTab = {
     Visuals = {},
     Movement = {},
     Combat = {},
+    Trolls = {}
     Events = {},
-    Customization = {},
     Utility = {},
+    Customization = {},
     Presets = {},
 }
 
