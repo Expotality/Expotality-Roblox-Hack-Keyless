@@ -315,4 +315,25 @@ function Module:Destroy()
 end
 
 
+--[[
+-- ui.lua "Get" button integration example:
+--
+-- The UI framework can create a "Get" button with Type = "Action" that calls
+-- Module:GiveSelectedTool() when clicked. This retrieves the currently selected
+-- tool from the dropdown and gives it to the player.
+--
+-- Example button config:
+-- {
+--     Type = "Action",
+--     Text = "Get",
+--     OnClick = function()
+--         module:GiveSelectedTool()
+--     end
+-- }
+--
+-- The module does not contain the button creation itself — the UI framework
+-- handles button rendering. The module only provides the GiveSelectedTool()
+-- method for the button to call.
+--]]
+
 return Module
