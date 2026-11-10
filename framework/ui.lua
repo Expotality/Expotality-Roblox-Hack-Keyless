@@ -725,7 +725,8 @@ local function createDropdown(
     parent,
     module,
     settingName,
-    title
+    title,
+    onHeightChanged
 )
 
     local options =
@@ -885,29 +886,27 @@ local function createDropdown(
 
     local function setOpen(value)
 
+        if open == value then
+            return
+        end
+
         open = value
 
         dropdown.Visible = open
 
-        if open then
+        container.Size =
+            UDim2.new(
+                1,
+                0,
+                0,
+                open and openHeight or closedHeight
+            )
 
-            container.Size =
-                UDim2.new(
-                    1,
-                    0,
-                    0,
-                    openHeight
-                )
-
-        else
-
-            container.Size =
-                UDim2.new(
-                    1,
-                    0,
-                    0,
-                    closedHeight
-                )
+        if onHeightChanged then
+            onHeightChanged(
+                open and (openHeight - closedHeight)
+                    or -(openHeight - closedHeight)
+            )
         end
 
         refreshText()
@@ -1451,6 +1450,37 @@ local function createModule(parent, module)
         ZIndex = 10,
         Parent = card,
     })
+    
+    local function updateSettingsLayout(heightChange)
+        settingsHeight += heightChange
+
+        if settingsFrame.Visible then
+            settingsFrame.Size = UDim2.new(
+                1,
+                -24,
+                0,
+                settingsHeight
+            )
+
+            card.Size = UDim2.new(
+                1,
+                0,
+                0,
+                52 + settingsHeight + 12
+            )
+        end
+
+        task.defer(function()
+            if parent and parent.Parent and parent:FindFirstChildOfClass("UIListLayout") then
+                parent.CanvasSize = UDim2.new(
+                    0,
+                    0,
+                    0,
+                    parent.UIListLayout.AbsoluteContentSize.Y + 10
+                )
+            end
+        end)
+    end
 
     local layout =
         Instance.new("UIListLayout")
@@ -2341,7 +2371,8 @@ local function createModule(parent, module)
                                 settingsFrame,
                                 module,
                                 settingName,
-                                title
+                                title,
+                                updateSettingsLayout
                             )
 
                         settingsHeight +=
