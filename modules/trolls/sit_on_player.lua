@@ -1,3 +1,4 @@
+
 local Module = {}
 
 Module.Name =
@@ -40,36 +41,20 @@ local SitRenderStepped = nil
 
 function Module:Enable()
 
-    self.Settings.Enabled =
-        true
+    self.Settings.Enabled = true
+
+    if SelectedPlayer then
+        self:StartSit()
+    end
 
 end
 
 
 function Module:Disable()
 
-    self.Settings.Enabled =
-        false
+    self.Settings.Enabled = false
 
-    IsSitting = false
-
-    if SitTrack then
-
-        SitTrack:Stop(0.2)
-
-        SitTrack:Destroy()
-
-        SitTrack = nil
-
-    end
-
-    if SitRenderStepped then
-
-        SitRenderStepped:Disconnect()
-
-        SitRenderStepped = nil
-
-    end
+    self:StopSit()
 
 end
 
@@ -100,8 +85,6 @@ end
 
 
 function Module:GetToolNames()
-
-    -- Returns player names for dropdown, matches RefreshPlayerList()
 
     local names = {}
 
@@ -135,8 +118,6 @@ end
 
 function Module:SelectPlayer(playerName)
 
-    -- Accept exact usernames to match RefreshPlayerList() output
-
     local found = nil
 
     for _, target in ipairs(Players:GetPlayers()) do
@@ -155,6 +136,15 @@ function Module:SelectPlayer(playerName)
 
         SelectedPlayer = found
 
+        self.Settings.SelectedPlayer = found.Name
+
+        if self.Settings.Enabled then
+
+            self:StopSit()
+            self:StartSit()
+
+        end
+
     end
 
     return found ~= nil
@@ -164,49 +154,44 @@ end
 
 function Module:StartSit()
 
-    if not SelectedPlayer or not SelectedPlayer.Character then
-
+    if not self.Settings.Enabled then
         return false
+    end
 
+    if not SelectedPlayer or not SelectedPlayer.Character then
+        return false
     end
 
     if IsSitting then
-
         return false
-
     end
-
-    IsSitting = true
 
     local character = LocalPlayer.Character
 
     if not character then
-
-        IsSitting = false
-
         return false
-
     end
 
     local humanoid = character:FindFirstChildOfClass("Humanoid")
 
     if not humanoid then
-
-        IsSitting = false
-
         return false
-
     end
 
-    -- Load sit animation
+    local rootPart = character:FindFirstChild("HumanoidRootPart")
+
+    if not rootPart then
+        return false
+    end
+
+    IsSitting = true
 
     local animator = humanoid:FindFirstChildOfClass("Animator")
 
     if not animator then
 
         animator = Instance.new("Animator")
-
-        animator.Parent = character
+        animator.Parent = humanoid
 
     end
 
@@ -214,15 +199,11 @@ function Module:StartSit()
 
     animation.AnimationId = "rbxassetid://2506281703"
 
-
     local success, track = pcall(function()
 
         return animator:LoadAnimation(animation)
 
     end)
-
-
-    -- Do NOT destroy animation; we need track to persist
 
     if success and track then
 
@@ -236,75 +217,41 @@ function Module:StartSit()
 
     end
 
-    -- Position tracking
-
-    local rootPart = character:FindFirstChild("HumanoidRootPart")
-
-    if not rootPart then
-
-        -- cleanup
-
-        if SitTrack then
-
-            SitTrack:Stop()
-
-            SitTrack:Destroy()
-
-            SitTrack = nil
-
-        end
-
-        IsSitting = false
-
-        return false
-
-    end
-
-
-    -- Reset velocities
-
     rootPart.AssemblyLinearVelocity = Vector3.zero
-
     rootPart.AssemblyAngularVelocity = Vector3.zero
-
-
-    -- Track position every frame
 
     SitRenderStepped = RunService.RenderStepped:Connect(function()
 
         if not IsSitting then
-
-            SitRenderStepped:Disconnect()
-
             return
-
         end
 
+        local currentCharacter = LocalPlayer.Character
 
-        if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-
+        if not currentCharacter then
             return
-
         end
 
+        local currentRoot = currentCharacter:FindFirstChild("HumanoidRootPart")
+
+        if not currentRoot then
+            return
+        end
 
         if not SelectedPlayer or not SelectedPlayer.Character then
-
             return
-
         end
-
 
         local targetHead = SelectedPlayer.Character:FindFirstChild("Head")
 
         if targetHead then
 
-            LocalPlayer.Character.HumanoidRootPart.CFrame = targetHead.CFrame * CFrame.new(0, 2.5, 0)
+            currentRoot.CFrame =
+                targetHead.CFrame * CFrame.new(0, 2.5, 0)
 
         end
 
     end)
-
 
     return true
 
@@ -337,8 +284,6 @@ end
 
 
 function Module:RefreshPlayerList()
-
-    -- Returns player USRNAMES (target.Name) - consistent with SelectPlayer()
 
     local names = {}
 
@@ -390,8 +335,6 @@ end
 
 function Module:GiveSelectedTool()
 
-    -- Format consistency with tool_giver module - not used for sitting
-
     return false
 
 end
@@ -405,12 +348,9 @@ function Module:SetSetting(Setting, Value)
 
     end
 
-
     if Setting == "Enabled" then
 
-        Value = Value and true or false
-
-        if Value == true then
+        if Value then
 
             self:Enable()
 
@@ -420,26 +360,31 @@ function Module:SetSetting(Setting, Value)
 
         end
 
-
         return true
 
     end
-
 
     if Setting == "SelectedPlayer" then
 
         self.Settings.SelectedPlayer = Value
 
-        -- Synchronize the local variable too
+        SelectedPlayer = nil
 
-        SelectedPlayer = Value ~= "" and self:SelectPlayer(Value) or nil
+        if Value ~= "" then
+
+            self:SelectPlayer(Value)
+
+        else
+
+            self:StopSit()
+
+        end
+
+        return true
 
     end
 
-
-    self.Settings[Setting] =
-        Value
-
+    self.Settings[Setting] = Value
 
     return true
 
