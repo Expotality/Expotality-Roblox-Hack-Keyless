@@ -18,6 +18,16 @@ Module.Settings = {
     SelectedTool = "",
 }
 
+--------------------------------------------------
+-- ACTION BUTTON
+--------------------------------------------------
+
+Module.Type = "Action"
+
+function Module:Open()
+    return self:GiveSelectedTool()
+end
+
 
 local Players =
     game:GetService("Players")
