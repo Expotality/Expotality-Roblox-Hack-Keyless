@@ -78,6 +78,12 @@ return {
     },
 
     {
+        Name = "Gameplay Paused Disabler",
+        File = "modules/utility/gameplay_paused_disabler.lua",
+        Tab = "Utility"
+    },
+
+    {
         Name = "Sit On Player",
         File = "modules/trolls/sit_on_player.lua",
         Tab = "Trolls"
